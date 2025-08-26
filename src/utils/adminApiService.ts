@@ -27,6 +27,17 @@ export interface Bot {
   status: string;
   createdAt: string;
   updatedAt: string;
+  // Additional properties used by the admin bots page
+  botName?: string;
+  tokenSymbol?: string;
+  userWallet?: string;
+  ownerWalletAddress?: string;
+  tokenAddress?: string;
+  lastTradeAt?: string;
+  deletedAt?: string;
+  user?: {
+    email?: string;
+  };
 }
 
 export interface DashboardStats {

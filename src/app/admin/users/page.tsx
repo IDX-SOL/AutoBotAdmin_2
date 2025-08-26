@@ -1,37 +1,42 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import AdminLayout from '../../../components/admin/AdminLayout';
-import adminApiService from '../../../utils/adminApiService';
-import { 
-  Search, 
-  Filter, 
+import { useState, useEffect, useCallback } from "react";
+import AdminLayout from "../../../components/admin/AdminLayout";
+import adminApiService, { User } from "../../../utils/adminApiService";
+import {
+  User as UserIcon,
+  Search,
+  Calendar,
   Trash2,
-  User,
-  Calendar
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pagination, setPagination] = useState({});
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1
+  });
 
   const fetchUsers = useCallback(async () => {
     try {
       const params = new URLSearchParams({
-        page: currentPage,
-        limit: 20,
+        page: currentPage.toString(),
+        limit: '20',
         search: searchTerm
       });
 
-      const response = await adminApiService.getUsers({
-        page: currentPage,
-        limit: 20,
-        search: searchTerm
-      });
+      const response = await adminApiService.getUsers(params.toString());
       setUsers(response.data.users);
       setPagination(response.data.pagination);
       setTotalPages(response.data.pagination.totalPages);
@@ -46,18 +51,18 @@ export default function AdminUsers() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
     fetchUsers();
   };
 
-  const UserCard = ({ user }) => (
+  const UserCard = ({ user }: { user: User }) => (
     <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-colors">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
-            <User className="h-6 w-6 text-white" />
+            <UserIcon className="h-6 w-6 text-white" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-white">{user.username}</h3>
@@ -66,13 +71,6 @@ export default function AdminUsers() {
               <span className="text-xs text-gray-500">
                 <Calendar className="h-3 w-3 inline mr-1" />
                 {new Date(user.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
-              </span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                user.emailVerified 
-                  ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-yellow-500/20 text-yellow-400'
-              }`}>
-                {user.emailVerified ? 'Verified' : 'Unverified'}
               </span>
             </div>
           </div>
@@ -181,7 +179,7 @@ export default function AdminUsers() {
               type="button"
               className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
             >
-              <Filter className="h-4 w-4" />
+              {/* <Filter className="h-4 w-4" /> */}
               <span>Filter</span>
             </button>
           </form>
@@ -197,7 +195,7 @@ export default function AdminUsers() {
         {/* Empty State */}
         {users.length === 0 && !loading && (
           <div className="text-center py-12">
-            <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">No users found</h3>
             <p className="text-gray-400">Try adjusting your search criteria</p>
           </div>

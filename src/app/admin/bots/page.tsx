@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "../../../components/admin/AdminLayout";
-import adminApiService from "../../../utils/adminApiService";
+import adminApiService, { Bot } from "../../../utils/adminApiService";
 import {
-  Bot,
+  Bot as BotIcon,
   Play,
   Activity,
   Calendar,
@@ -22,30 +22,30 @@ import Link from "next/link";
 // import { useToast } from '@/components/Toast/ToastContext';
 
 export default function AdminBots() {
-  const [bots, setBots] = useState([]);
+  const [bots, setBots] = useState<Bot[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [deletedFilter, setDeletedFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pagination, setPagination] = useState({});
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1
+  });
   // const { showSuccess } = useToast();
 
   const fetchBots = useCallback(async () => {
     try {
-      const params = new URLSearchParams({
-        page: currentPage,
-        limit: 20,
-        status: statusFilter,
-        deleted: deletedFilter,
-      });
-
-      const response = await adminApiService.getBots({
-        page: currentPage,
-        limit: 20,
-        status: statusFilter,
-        deleted: deletedFilter,
-      });
+      const response = await adminApiService.getBots(
+        `?page=${currentPage}&limit=20&status=${statusFilter}&deleted=${deletedFilter}`
+      );
       console.log("Bots data:", response.data);
       setBots(response.data.bots || []);
       setPagination(response.data.pagination || {});
@@ -61,7 +61,7 @@ export default function AdminBots() {
     fetchBots();
   }, [fetchBots]);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string | undefined) => {
     if (!status) return "bg-gray-500/20 text-gray-400";
 
     switch (status) {
@@ -82,8 +82,8 @@ export default function AdminBots() {
     }
   };
 
-  const getStatusIcon = (status) => {
-    if (!status) return <Bot className="h-4 w-4" />;
+  const getStatusIcon = (status: string | undefined) => {
+    if (!status) return <BotIcon className="h-4 w-4" />;
 
     switch (status) {
       case "running":
@@ -99,33 +99,33 @@ export default function AdminBots() {
       case "refunded":
         return <CheckCircle className="h-4 w-4" />;
       default:
-        return <Bot className="h-4 w-4" />;
+        return <BotIcon className="h-4 w-4" />;
     }
   };
 
-  const BotCardAdmin = ({ bot }) => {
-    const [copiedField, setCopiedField] = useState(null);
+  const BotCardAdmin = ({ bot }: { bot: Bot }) => {
+    const [copiedField, setCopiedField] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     if (!bot) return null;
 
     console.log("Rendering bot card:", bot);
 
-    const handleCopy = (text, field) => {
+    const handleCopy = (text: string, field: string) => {
       navigator.clipboard.writeText(text);
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
     };
 
-    const getStatusBadge = (status) => {
-      const statusConfig = {
+    const getStatusBadge = (status: string | undefined) => {
+      const statusConfig: Record<string, { color: string; icon: string }> = {
         running: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: '▶' },
         stopped: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '⏹' },
         paused: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: '⏸' },
         error: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' }
       };
       
-      const config = statusConfig[status] || statusConfig.stopped;
+      const config = statusConfig[status || 'stopped'] || statusConfig.stopped;
       
       return (
         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${config.color}`}>
@@ -141,7 +141,7 @@ export default function AdminBots() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-              <Bot className="h-5 w-5 text-white" />
+              <BotIcon className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -180,11 +180,12 @@ export default function AdminBots() {
                 {bot.userWallet ? `${bot.userWallet.slice(0, 4)}...${bot.userWallet.slice(-4)}` : 'N/A'}
               </span>
               <button
-                onClick={() => handleCopy(bot.userWallet, 'userWallet')}
+                onClick={() => bot.userWallet && handleCopy(bot.userWallet, 'userWallet')}
                 className={`p-1 rounded transition-colors ${
                   copiedField === 'userWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
                 }`}
                 title="Copy user wallet"
+                disabled={!bot.userWallet}
               >
                 {copiedField === 'userWallet' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               </button>
@@ -206,11 +207,12 @@ export default function AdminBots() {
                 {bot.ownerWalletAddress ? `${bot.ownerWalletAddress.slice(0, 4)}...${bot.ownerWalletAddress.slice(-4)}` : 'N/A'}
               </span>
               <button
-                onClick={() => handleCopy(bot.ownerWalletAddress, 'botWallet')}
+                onClick={() => bot.ownerWalletAddress && handleCopy(bot.ownerWalletAddress, 'botWallet')}
                 className={`p-1 rounded transition-colors ${
                   copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
                 }`}
                 title="Copy bot wallet"
+                disabled={!bot.ownerWalletAddress}
               >
                 {copiedField === 'botWallet' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               </button>
@@ -232,11 +234,12 @@ export default function AdminBots() {
                 {bot.tokenAddress ? `${bot.tokenAddress.slice(0, 4)}...${bot.tokenAddress.slice(-4)}` : 'N/A'}
               </span>
               <button
-                onClick={() => handleCopy(bot.tokenAddress, 'tokenAddress')}
+                onClick={() => bot.tokenAddress && handleCopy(bot.tokenAddress, 'tokenAddress')}
                 className={`p-1 rounded transition-colors ${
                   copiedField === 'tokenAddress' ? 'text-green-400' : 'text-gray-400 hover:text-white'
                 }`}
                 title="Copy token address"
+                disabled={!bot.tokenAddress}
               >
                 {copiedField === 'tokenAddress' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               </button>
@@ -421,7 +424,7 @@ export default function AdminBots() {
         {/* Empty State */}
         {bots.length === 0 && !loading && (
           <div className="text-center py-12">
-            <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <BotIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">
               No bots found
             </h3>
