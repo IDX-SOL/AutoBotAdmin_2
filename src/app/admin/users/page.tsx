@@ -30,18 +30,63 @@ export default function AdminUsers() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '20',
+      console.log("Fetching users with params:", { currentPage, searchTerm });
+      
+      // Pass parameters as an object instead of a string
+      const params = {
+        page: currentPage,
+        limit: 20,
         search: searchTerm
-      });
+      };
 
-      const response = await adminApiService.getUsers(params.toString());
-      setUsers(response.data.users);
-      setPagination(response.data.pagination);
-      setTotalPages(response.data.pagination.totalPages);
-    } catch (error) {
+      const response = await adminApiService.getUsers(params);
+      
+      console.log("Raw response:", response);
+      console.log("Response type:", typeof response);
+      console.log("Response.data:", response?.data);
+      
+      // Check if response and response.data exist
+      if (response && response.data) {
+        // Safely extract data with fallbacks
+        const usersData = response.data.users || [];
+        const paginationData = response.data.pagination || {
+          page: currentPage,
+          limit: 20,
+          total: 0,
+          totalPages: 1
+        };
+        
+        console.log("Extracted users data:", usersData);
+        console.log("Extracted pagination data:", paginationData);
+        
+        setUsers(usersData);
+        setPagination(paginationData);
+        setTotalPages(paginationData.totalPages || 1);
+      } else {
+        console.warn("Invalid response structure:", response);
+        setUsers([]);
+        setPagination({
+          page: currentPage,
+          limit: 20,
+          total: 0,
+          totalPages: 1
+        });
+        setTotalPages(1);
+      }
+    } catch (error: unknown) {
       console.error('Error fetching users:', error);
+      console.error("Error type:", typeof error);
+      console.error("Error stringified:", JSON.stringify(error, null, 2));
+      
+      // Set default values on error
+      setUsers([]);
+      setPagination({
+        page: currentPage,
+        limit: 20,
+        total: 0,
+        totalPages: 1
+      });
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }

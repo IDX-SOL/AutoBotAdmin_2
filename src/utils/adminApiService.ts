@@ -33,11 +33,15 @@ export interface Bot {
   userWallet?: string;
   ownerWalletAddress?: string;
   tokenAddress?: string;
-  lastTradeAt?: string;
+  gasFees?: number;
   deletedAt?: string;
   user?: {
+    id?: string;
+    username?: string;
     email?: string;
   };
+  // Optional fields that might not be returned by the backend
+  lastTradeAt?: string;
 }
 
 export interface DashboardStats {
@@ -63,8 +67,8 @@ export interface LoginResponse {
   admin: AdminUser;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
+export interface UsersResponse {
+  users: User[];
   pagination: {
     page: number;
     limit: number;
@@ -73,12 +77,14 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface UsersResponse extends PaginatedResponse<User> {
-  users: User[];
-}
-
-export interface BotsResponse extends PaginatedResponse<Bot> {
+export interface BotsResponse {
   bots: Bot[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface AdminsResponse {
@@ -141,7 +147,7 @@ const adminApiService = {
     adminAxiosInstance.get('/admin/dashboard/stats'),
   
   // Users management
-  getUsers: (params?: string): Promise<AxiosResponse<UsersResponse>> => 
+  getUsers: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<UsersResponse>> => 
     adminAxiosInstance.get('/admin/users', { params }),
   getUser: (userId: string): Promise<AxiosResponse<User>> => 
     adminAxiosInstance.get(`/admin/users/${userId}`),
@@ -161,7 +167,7 @@ const adminApiService = {
     adminAxiosInstance.delete(`/admin/admins/${adminId}`),
   
   // Bots management
-  getBots: (params?: string): Promise<AxiosResponse<BotsResponse>> => 
+  getBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<BotsResponse>> => 
     adminAxiosInstance.get('/admin/bots', { params }),
   getBot: (botId: string): Promise<AxiosResponse<Bot>> => 
     adminAxiosInstance.get(`/admin/bots/${botId}`),
@@ -173,15 +179,17 @@ const adminApiService = {
     adminAxiosInstance.get(`/admin/bots/${botId}/trade-wallets`),
   restoreBot: (botId: string): Promise<AxiosResponse<Bot>> => 
     adminAxiosInstance.post(`/admin/bots/${botId}/restore`),
+  
   // Analytics and reports
-  getAnalytics: (params?: string): Promise<AxiosResponse<string>> => 
+  getAnalytics: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get('/admin/analytics', { params }),
-  getReports: (params?: string): Promise<AxiosResponse<string>> => 
+  getReports: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get('/admin/reports', { params }),
+  
   // System management
   getSystemStatus: (): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get('/admin/system/status'),
-  getLogs: (params?: string): Promise<AxiosResponse<string>> => 
+  getLogs: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get('/admin/system/logs', { params }),
   
   // Utility methods
@@ -210,4 +218,4 @@ const adminApiService = {
   getAxiosInstance: (): AxiosInstance => adminAxiosInstance
 };
 
-export default adminApiService; 
+export default adminApiService;

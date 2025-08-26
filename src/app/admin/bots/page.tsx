@@ -43,15 +43,67 @@ export default function AdminBots() {
 
   const fetchBots = useCallback(async () => {
     try {
-      const response = await adminApiService.getBots(
-        `?page=${currentPage}&limit=20&status=${statusFilter}&deleted=${deletedFilter}`
-      );
-      console.log("Bots data:", response.data);
-      setBots(response.data.bots || []);
-      setPagination(response.data.pagination || {});
-      setTotalPages(response.data.pagination?.totalPages || 1);
-    } catch (error) {
+      console.log("Fetching bots with params:", { currentPage, statusFilter, deletedFilter });
+      
+      // Pass parameters as an object instead of a string
+      const params = {
+        page: currentPage,
+        limit: 20,
+        status: statusFilter,
+        deleted: deletedFilter
+      };
+      
+      const response = await adminApiService.getBots(params);
+      
+      console.log("Raw response:", response);
+      console.log("Response type:", typeof response);
+      console.log("Response.data:", response?.data);
+      console.log("Response.data type:", typeof response?.data);
+      
+      // Check if response and response.data exist
+      if (response && response.data) {
+        console.log("Bots data:", response.data);
+        
+        // Safely extract data with fallbacks
+        const botsData = response.data.bots || [];
+        const paginationData = response.data.pagination || {
+          page: currentPage,
+          limit: 20,
+          total: 0,
+          totalPages: 1
+        };
+        
+        console.log("Extracted bots data:", botsData);
+        console.log("Extracted pagination data:", paginationData);
+        
+        setBots(botsData);
+        setPagination(paginationData);
+        setTotalPages(paginationData.totalPages || 1);
+      } else {
+        console.warn("Invalid response structure:", response);
+        setBots([]);
+        setPagination({
+          page: currentPage,
+          limit: 20,
+          total: 0,
+          totalPages: 1
+        });
+        setTotalPages(1);
+      }
+    } catch (error: unknown) {
       console.error("Error fetching bots:", error);
+      console.error("Error type:", typeof error);
+      console.error("Error stringified:", JSON.stringify(error, null, 2));
+      
+      // Set default values on error
+      setBots([]);
+      setPagination({
+        page: currentPage,
+        limit: 20,
+        total: 0,
+        totalPages: 1
+      });
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
