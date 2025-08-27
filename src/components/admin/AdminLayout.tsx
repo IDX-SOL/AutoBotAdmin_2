@@ -13,10 +13,6 @@ import {
   TrendingUp,
   User,
   BitcoinIcon,
-  Camera,
-  SortDescIcon,
-  MoveDiagonalIcon,
-  TrendingUpDownIcon
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 

@@ -401,8 +401,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Performance Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Campaigns */}
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
             <h3 className="text-lg font-semibold text-white mb-4">Top Campaigns</h3>
             <div className="space-y-3">
@@ -412,7 +411,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Top Tokens */}
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
             <h3 className="text-lg font-semibold text-white mb-4">Top Tokens</h3>
             <div className="space-y-3">
@@ -421,7 +419,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Quick Actions */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
