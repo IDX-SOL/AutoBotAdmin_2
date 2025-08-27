@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Force local backend for development
-    const BACKEND_URL = 'http://localhost:3000';
+    // Use environment variable for backend URL, fallback to localhost for development
+    const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
     
     console.log('🔄 Fetching token stats from backend:', `${BACKEND_URL}/admin-dev/tokens/stats`);
     

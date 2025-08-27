@@ -137,9 +137,9 @@ export default function AdminTokens() {
   const getTokenStats = () => {
     const total = tokens.length;
     const active = tokens.filter(t => t.priceUsd && t.priceUsd > 0).length;
-    const totalMarketCap = tokens.reduce((sum, t) => sum + (t.marketCap || 0), 0);
-    const totalVolume = tokens.reduce((sum, t) => sum + (t.volume24h || 0), 0);
-    const avgPrice = tokens.reduce((sum, t) => sum + (t.priceUsd || 0), 0) / total;
+    const totalMarketCap = tokens.reduce((sum, t) => sum + (Number(t.marketCap) || 0), 0);
+    const totalVolume = tokens.reduce((sum, t) => sum + (Number(t.volume24h) || 0), 0);
+    const avgPrice = total > 0 ? tokens.reduce((sum, t) => sum + (Number(t.priceUsd) || 0), 0) / total : 0;
 
     return { total, active, totalMarketCap, totalVolume, avgPrice };
   };
@@ -163,11 +163,19 @@ export default function AdminTokens() {
     </div>
   );
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-    if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`;
-    return `$${value.toFixed(2)}`;
+  const formatCurrency = (value: number | string | undefined | null) => {
+    // Convert to number and handle invalid values
+    const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+    
+    // Check if the value is a valid number
+    if (isNaN(numValue) || numValue === 0) {
+      return '$0.00';
+    }
+    
+    if (numValue >= 1e9) return `$${(numValue / 1e9).toFixed(2)}B`;
+    if (numValue >= 1e6) return `$${(numValue / 1e6).toFixed(2)}M`;
+    if (numValue >= 1e3) return `$${(numValue / 1e3).toFixed(2)}K`;
+    return `$${numValue.toFixed(2)}`;
   };
 
   if (loading) {

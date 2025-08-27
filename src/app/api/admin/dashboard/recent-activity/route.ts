@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Force local backend for development
-const BACKEND_URL = 'http://localhost:3000';
+// Use environment variable for backend URL, fallback to localhost for development
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 
 export async function GET(request: NextRequest) {
   try {

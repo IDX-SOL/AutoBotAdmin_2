@@ -161,9 +161,9 @@ export default function AdminCampaigns() {
   const getCampaignStats = () => {
     const total = campaigns.length;
     const converted = campaigns.filter(c => c.isConverted).length;
-    const conversionRate = total > 0 ? (converted / total * 100).toFixed(1) : 0;
-    const totalVisits = campaigns.reduce((sum, c) => sum + c.visitCount, 0);
-    const avgVisits = total > 0 ? (totalVisits / total).toFixed(1) : 0;
+    const conversionRate = total > 0 ? Number((converted / total * 100).toFixed(1)) : 0;
+    const totalVisits = campaigns.reduce((sum, c) => sum + (Number(c.visitCount) || 0), 0);
+    const avgVisits = total > 0 ? Number((totalVisits / total).toFixed(1)) : 0;
 
     return { total, converted, conversionRate, totalVisits, avgVisits };
   };
