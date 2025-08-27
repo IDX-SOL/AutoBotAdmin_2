@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { ArrowLeft, Wallet, Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import adminApiService from '../../../../../utils/adminApiService';
 
 export default function BotTradeWalletsPage() {
   const params = useParams();
-  const router = useRouter();
   const botId = params.botId;
   
   const [bot, setBot] = useState(null);

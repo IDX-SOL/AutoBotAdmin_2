@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import adminApiService, { DashboardStats, User, Bot } from '@/utils/adminApiService';
 import { 
@@ -54,11 +54,7 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const response = await adminApiService.getDashboardStats();
       setStats(response.data.stats);
@@ -76,7 +72,11 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const fetchRecentActivity = async () => {
     try {

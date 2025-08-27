@@ -45,7 +45,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     try {
       setAdminData(JSON.parse(admin));
-    } catch (error) {
+    } catch {
       router.push('/admin/login');
     }
   }, [router]);

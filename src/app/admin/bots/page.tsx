@@ -5,13 +5,8 @@ import AdminLayout from "../../../components/admin/AdminLayout";
 import adminApiService, { Bot } from "../../../utils/adminApiService";
 import {
   Bot as BotIcon,
-  Play,
   Activity,
   Calendar,
-  User,
-  AlertCircle,
-  CheckCircle,
-  StopCircle,
   Copy,
   Check,
   ExternalLink,
@@ -113,47 +108,47 @@ export default function AdminBots() {
     fetchBots();
   }, [fetchBots]);
 
-  const getStatusColor = (status: string | undefined) => {
-    if (!status) return "bg-gray-500/20 text-gray-400";
+  // const getStatusColor = (status: string | undefined) => {
+  //   if (!status) return "bg-gray-500/20 text-gray-400";
 
-    switch (status) {
-      case "running":
-        return "bg-green-500/20 text-green-400";
-      case "warning":
-        return "bg-yellow-500/20 text-yellow-400";
-      case "stopped":
-        return "bg-red-500/20 text-red-400";
-      case "error":
-        return "bg-red-500/20 text-red-400";
-      case "refunding":
-        return "bg-orange-500/20 text-orange-400";
-      case "refunded":
-        return "bg-blue-500/20 text-blue-400";
-      default:
-        return "bg-gray-500/20 text-gray-400";
-    }
-  };
+  //   switch (status) {
+  //     case "running":
+  //       return "bg-green-500/20 text-green-400";
+  //     case "warning":
+  //       return "bg-yellow-500/20 text-yellow-400";
+  //     case "stopped":
+  //       return "bg-red-500/20 text-red-400";
+  //     case "error":
+  //       return "bg-red-500/20 text-red-400";
+  //     case "refunding":
+  //       return "bg-orange-500/20 text-orange-400";
+  //     case "refunded":
+  //       return "bg-blue-500/20 text-blue-400";
+  //     default:
+  //       return "bg-gray-500/20 text-gray-400";
+  //   }
+  // };
 
-  const getStatusIcon = (status: string | undefined) => {
-    if (!status) return <BotIcon className="h-4 w-4" />;
+  // const getStatusIcon = (status: string | undefined) => {
+  //   if (!status) return <BotIcon className="h-4 w-4" />;
 
-    switch (status) {
-      case "running":
-        return <Play className="h-4 w-4" />;
-      case "warning":
-        return <AlertCircle className="h-4 w-4" />;
-      case "stopped":
-        return <StopCircle className="h-4 w-4" />;
-      case "error":
-        return <AlertCircle className="h-4 w-4" />;
-      case "refunding":
-        return <Activity className="h-4 w-4" />;
-      case "refunded":
-        return <CheckCircle className="h-4 w-4" />;
-      default:
-        return <BotIcon className="h-4 w-4" />;
-    }
-  };
+  //   switch (status) {
+  //       case "running":
+  //         return <Play className="h-4 w-4" />;
+  //       case "warning":
+  //         return <AlertCircle className="h-4 w-4" />;
+  //       case "stopped":
+  //         return <StopCircle className="h-4 w-4" />;
+  //       case "error":
+  //         return <AlertCircle className="h-4 w-4" />;
+  //       case "refunding":
+  //         return <Activity className="h-4 w-4" />;
+  //       case "refunded":
+  //         return <CheckCircle className="h-4 w-4" />;
+  //       default:
+  //         return <BotIcon className="h-4 w-4" />;
+  //     }
+  // };
 
   const BotCardAdmin = ({ bot }: { bot: Bot }) => {
     const [copiedField, setCopiedField] = useState<string | null>(null);

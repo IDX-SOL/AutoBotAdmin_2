@@ -1,19 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { 
   Database, 
   TrendingUp, 
-  Calendar, 
   Search, 
-  Filter, 
   Download, 
   Eye, 
   BarChart3,
   ExternalLink,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
 
 interface Token {
@@ -30,7 +27,7 @@ interface Token {
   pairAddress?: string;
   baseToken?: string;
   quoteToken?: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,9 +67,45 @@ export default function AdminTokens() {
     fetchTokens();
   }, []);
 
+  const filterTokens = useCallback(() => {
+    let filtered = [...tokens];
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(token =>
+        token.tokenName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        token.tokenSymbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        token.tokenAddress.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply token type filter
+    if (tokenFilter !== 'all') {
+      switch (tokenFilter) {
+        case 'active':
+          filtered = filtered.filter(t => t.priceUsd && t.priceUsd > 0);
+          break;
+        case 'inactive':
+          filtered = filtered.filter(t => !t.priceUsd || t.priceUsd <= 0);
+          break;
+        case 'validated':
+          // Show recently validated tokens (last 7 days)
+          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          filtered = filtered.filter(t => new Date(t.createdAt) > weekAgo);
+          break;
+        case 'popular':
+          // Show tokens with highest volume
+          filtered = filtered.sort((a, b) => (b.volume24h || 0) - (a.volume24h || 0));
+          break;
+      }
+    }
+
+    setFilteredTokens(filtered);
+  }, [tokens, searchTerm, tokenFilter]);
+
   useEffect(() => {
     filterTokens();
-  }, [tokens, searchTerm, tokenFilter, dateRange]);
+  }, [filterTokens]);
 
   const fetchTokens = async () => {
     try {
@@ -149,42 +182,6 @@ export default function AdminTokens() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterTokens = () => {
-    let filtered = [...tokens];
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(token =>
-        token.tokenName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        token.tokenSymbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        token.tokenAddress.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Apply token type filter
-    if (tokenFilter !== 'all') {
-      switch (tokenFilter) {
-        case 'active':
-          filtered = filtered.filter(t => t.priceUsd && t.priceUsd > 0);
-          break;
-        case 'inactive':
-          filtered = filtered.filter(t => !t.priceUsd || t.priceUsd <= 0);
-          break;
-        case 'validated':
-          // Show recently validated tokens (last 7 days)
-          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          filtered = filtered.filter(t => new Date(t.createdAt) > weekAgo);
-          break;
-        case 'popular':
-          // Show tokens with highest volume
-          filtered = filtered.sort((a, b) => (b.volume24h || 0) - (a.volume24h || 0));
-          break;
-      }
-    }
-
-    setFilteredTokens(filtered);
   };
 
   const getTokenStats = () => {

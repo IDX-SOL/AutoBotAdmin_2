@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { 
   BarChart3, 
@@ -8,11 +8,8 @@ import {
   TrendingUp, 
   Eye, 
   Target, 
-  Calendar, 
-  Filter, 
   Download,
-  Search,
-  ExternalLink
+  Search
 } from 'lucide-react';
 
 interface Campaign {
@@ -45,10 +42,15 @@ interface Campaign {
   firstVisit: string;
   lastVisit: string;
   visitCount: number;
-  conversionEvents: any[];
+  conversionEvents: Array<{
+    type: string;
+    data: Record<string, unknown>;
+    timestamp: string;
+    metadata?: Record<string, unknown>;
+  }>;
   isConverted: boolean;
   conversionDate?: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,13 +87,49 @@ export default function AdminCampaigns() {
     { value: 'active', label: 'Active' },
   ];
 
+  const filterCampaigns = useCallback(() => {
+    let filtered = [...campaigns];
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(campaign =>
+        campaign.utmCampaign.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        campaign.utmSource.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        campaign.utmMedium.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply campaign type filter
+    if (campaignFilter !== 'all') {
+      switch (campaignFilter) {
+        case 'google':
+          filtered = filtered.filter(c => c.utmSource === 'google');
+          break;
+        case 'social':
+          filtered = filtered.filter(c => ['twitter', 'facebook', 'instagram', 'linkedin'].includes(c.utmSource));
+          break;
+        case 'direct':
+          filtered = filtered.filter(c => !c.utmSource);
+          break;
+        case 'converted':
+          filtered = filtered.filter(c => c.isConverted);
+          break;
+        case 'active':
+          filtered = filtered.filter(c => c.visitCount > 1);
+          break;
+      }
+    }
+
+    setFilteredCampaigns(filtered);
+  }, [campaigns, searchTerm, campaignFilter]);
+
   useEffect(() => {
     fetchCampaigns();
   }, []);
 
   useEffect(() => {
     filterCampaigns();
-  }, [campaigns, searchTerm, campaignFilter, dateRange]);
+  }, [filterCampaigns]);
 
   const fetchCampaigns = async () => {
     try {
@@ -153,42 +191,6 @@ export default function AdminCampaigns() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterCampaigns = () => {
-    let filtered = [...campaigns];
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(campaign =>
-        campaign.utmCampaign.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        campaign.utmSource.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        campaign.utmMedium.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Apply campaign type filter
-    if (campaignFilter !== 'all') {
-      switch (campaignFilter) {
-        case 'google':
-          filtered = filtered.filter(c => c.utmSource === 'google');
-          break;
-        case 'social':
-          filtered = filtered.filter(c => ['twitter', 'facebook', 'instagram', 'linkedin'].includes(c.utmSource));
-          break;
-        case 'direct':
-          filtered = filtered.filter(c => !c.utmSource);
-          break;
-        case 'converted':
-          filtered = filtered.filter(c => c.isConverted);
-          break;
-        case 'active':
-          filtered = filtered.filter(c => c.visitCount > 1);
-          break;
-      }
-    }
-
-    setFilteredCampaigns(filtered);
   };
 
   const getCampaignStats = () => {
