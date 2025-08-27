@@ -11,7 +11,12 @@ import {
   X,
   Shield,
   TrendingUp,
-  User
+  User,
+  BitcoinIcon,
+  Camera,
+  SortDescIcon,
+  MoveDiagonalIcon,
+  TrendingUpDownIcon
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 
@@ -20,7 +25,9 @@ const navigation = [
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Bots', href: '/admin/bots', icon: Bot },
   { name: 'Admins', href: '/admin/admins', icon: Shield },
-  { name: 'Analytics', href: '#', icon: TrendingUp },
+  { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
+  { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
+  // { name: 'Analytics', href: '#', icon: TrendingUpDownIcon },
   // { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
