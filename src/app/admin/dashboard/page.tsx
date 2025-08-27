@@ -80,32 +80,47 @@ export default function AdminDashboard() {
 
   const fetchRecentActivity = async () => {
     try {
-      // TODO: Replace with actual API calls
-      setRecentActivity([
-        {
-          id: 1,
-          type: 'user_registration',
-          message: 'New user registered via Google OAuth',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000),
-          user: 'john.doe@example.com'
-        },
-        {
-          id: 2,
-          type: 'token_validation',
-          message: 'New Solana token validated',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000),
-          token: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-        },
-        {
-          id: 3,
-          type: 'campaign_conversion',
-          message: 'Campaign conversion from Google Ads',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000),
-          campaign: 'IDX_AutoBot_Exact_Match'
+      console.log('📊 Fetching recent activity from API...');
+      
+      const response = await fetch('/api/admin/dashboard/recent-activity');
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Recent activity received:', result);
+        
+        if (result.success && result.data?.activities) {
+          // Transform the API response to match our component's expected format
+          const transformedActivities = result.data.activities.map((activity: {
+            id: string;
+            type: string;
+            message: string;
+            timestamp: string;
+            user?: string;
+            token?: string;
+            campaign?: string;
+            metadata?: Record<string, unknown>;
+          }) => ({
+            id: activity.id,
+            type: activity.type,
+            message: activity.message,
+            timestamp: new Date(activity.timestamp),
+            user: activity.user || null,
+            token: activity.token || null,
+            campaign: activity.campaign || null,
+            metadata: activity.metadata || {}
+          }));
+          
+          setRecentActivity(transformedActivities);
+        } else {
+          console.warn('⚠️ API returned invalid data structure:', result);
+          setRecentActivity([]);
         }
-      ]);
+      } else {
+        console.warn('⚠️ Recent activity API returned error:', response.status);
+        setRecentActivity([]);
+      }
     } catch (error) {
-      console.error('Failed to fetch recent activity:', error);
+      console.error('❌ Failed to fetch recent activity:', error);
+      setRecentActivity([]);
     }
   };
 
@@ -123,20 +138,18 @@ export default function AdminDashboard() {
         });
       } else {
         console.warn('⚠️ Campaign stats API returned error:', response.status);
-        // Fallback to mock data if API fails
         setCampaignStats({
-          totalCampaigns: 23,
-          conversionRate: 12.5,
-          changeFromLastMonth: 5.3
+          totalCampaigns: 0,
+          conversionRate: 0,
+          changeFromLastMonth: 0
         });
       }
     } catch (error) {
       console.error('❌ Failed to fetch campaign stats:', error);
-      // Fallback to mock data
       setCampaignStats({
-        totalCampaigns: 23,
-        conversionRate: 12.5,
-        changeFromLastMonth: 5.3
+        totalCampaigns: 0,
+        conversionRate: 0,
+        changeFromLastMonth: 0
       });
     }
   };
@@ -154,18 +167,16 @@ export default function AdminDashboard() {
         });
       } else {
         console.warn('⚠️ Token stats API returned error:', response.status);
-        // Fallback to mock data if API fails
         setTokenStats({
-          totalTokens: 89,
-          changeFromLastMonth: 22.4
+          totalTokens: 0,
+          changeFromLastMonth: 0
         });
       }
     } catch (error) {
       console.error('❌ Failed to fetch token stats:', error);
-      // Fallback to mock data
       setTokenStats({
-        totalTokens: 89,
-        changeFromLastMonth: 22.4
+        totalTokens: 0,
+        changeFromLastMonth: 0
       });
     }
   };
@@ -229,7 +240,11 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <span className="text-xs text-gray-400">
-                {new Date(item.createdAt).toLocaleDateString()}
+                {new Date(item.createdAt).toLocaleString('en-IN', { 
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                })}
               </span>
             </div>
           ))}
@@ -264,7 +279,11 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <span className="text-xs text-gray-400">
-                    {new Date(item.createdAt).toLocaleDateString()}
+                    {new Date(item.createdAt).toLocaleString('en-IN', { 
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                })}
                   </span>
                 </div>
               );
@@ -393,7 +412,11 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="text-xs text-gray-400">
-                  {activity.timestamp.toLocaleTimeString()}
+                  {activity.timestamp.toLocaleString('en-IN', { 
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                })}
                 </div>
               </div>
             ))}

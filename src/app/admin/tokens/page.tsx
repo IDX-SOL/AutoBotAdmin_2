@@ -109,76 +109,26 @@ export default function AdminTokens() {
 
   const fetchTokens = async () => {
     try {
-      // TODO: Replace with actual API call
-      const mockTokens: Token[] = [
-        {
-          id: '1',
-          tokenAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          tokenName: 'USD Coin',
-          tokenSymbol: 'USDC',
-          price: '$1.00',
-          priceUsd: 1.00,
-          marketCap: 50000000000,
-          volume24h: 1000000000,
-          liquidity: 5000000000,
-          dexId: 'raydium',
-          pairAddress: 'pair123',
-          baseToken: 'base123',
-          quoteToken: 'quote123',
-          metadata: {
-            dexScreenerData: {},
-            validatedAt: '2025-08-26T14:22:09.894Z'
-          },
-          createdAt: '2025-08-26T14:22:09.895Z',
-          updatedAt: '2025-08-26T14:22:09.895Z'
-        },
-        {
-          id: '2',
-          tokenAddress: 'So11111111111111111111111111111111111111112',
-          tokenName: 'Wrapped SOL',
-          tokenSymbol: 'SOL',
-          price: '$98.45',
-          priceUsd: 98.45,
-          marketCap: 45000000000,
-          volume24h: 2000000000,
-          liquidity: 8000000000,
-          dexId: 'raydium',
-          pairAddress: 'pair456',
-          baseToken: 'base456',
-          quoteToken: 'quote456',
-          metadata: {
-            dexScreenerData: {},
-            validatedAt: '2025-08-26T13:00:00.000Z'
-          },
-          createdAt: '2025-08-26T13:00:00.000Z',
-          updatedAt: '2025-08-26T13:00:00.000Z'
-        },
-        {
-          id: '3',
-          tokenAddress: '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs',
-          tokenName: 'Ethereum (Portal)',
-          tokenSymbol: 'ETH',
-          price: '$3,245.67',
-          priceUsd: 3245.67,
-          marketCap: 390000000000,
-          volume24h: 15000000000,
-          liquidity: 12000000000,
-          dexId: 'raydium',
-          pairAddress: 'pair789',
-          baseToken: 'base789',
-          quoteToken: 'quote789',
-          metadata: {
-            dexScreenerData: {},
-            validatedAt: '2025-08-26T12:00:00.000Z'
-          },
-          createdAt: '2025-08-26T12:00:00.000Z',
-          updatedAt: '2025-08-26T12:00:00.000Z'
-        }
-      ];
+      console.log('🪙 Fetching tokens from API...');
       
-      setTokens(mockTokens);
+      const response = await fetch('/api/admin/tokens/list');
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Tokens received:', result);
+        
+        if (result.success && result.data?.tokens) {
+          setTokens(result.data.tokens);
+        } else {
+          console.warn('⚠️ API returned invalid data structure:', result);
+          setTokens([]);
+        }
+      } else {
+        console.warn('⚠️ Tokens API returned error:', response.status);
+        setTokens([]);
+      }
     } catch (error) {
-      console.error('Error fetching tokens:', error);
+      console.error('❌ Error fetching tokens:', error);
+      setTokens([]);
     } finally {
       setLoading(false);
     }

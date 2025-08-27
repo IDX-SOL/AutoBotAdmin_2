@@ -5,19 +5,18 @@ export async function GET() {
     // Force local backend for development
     const BACKEND_URL = 'http://localhost:3000';
     
-    console.log('🔄 Fetching campaign stats from backend:', `${BACKEND_URL}/admin-dev/campaigns/stats`);
+    console.log('🔄 Fetching campaigns list from backend:', `${BACKEND_URL}/admin-dev/campaigns/list`);
     
-    const response = await fetch(`${BACKEND_URL}/admin-dev/campaigns/stats`, {
+    const response = await fetch(`${BACKEND_URL}/admin-dev/campaigns/list`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // Add authentication headers here if needed
       },
     });
 
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Campaign stats received from backend:', data);
+      console.log('✅ Campaigns list received from backend:', data);
       return NextResponse.json(data);
     } else {
       console.warn('⚠️ Backend returned error status:', response.status);
@@ -28,13 +27,13 @@ export async function GET() {
         { 
           success: false, 
           error: 'Backend error', 
-          message: 'Failed to fetch campaign stats from backend' 
+          message: 'Failed to fetch campaigns list from backend' 
         },
         { status: response.status }
       );
     }
   } catch (error) {
-    console.error('❌ Campaign stats API error:', error);
+    console.error('❌ Campaigns list API error:', error);
     
     return NextResponse.json(
       { 

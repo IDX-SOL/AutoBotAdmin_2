@@ -133,61 +133,26 @@ export default function AdminCampaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      // TODO: Replace with actual API call
-      const mockCampaigns: Campaign[] = [
-        {
-          id: '1',
-          sessionId: 'idx_1756215793840_6td15m1zl',
-          utmSource: 'google',
-          utmMedium: 'cpc',
-          utmCampaign: 'IDX_AutoBot_Exact_Match',
-          utmCampaignId: '22866602874',
-          utmAdgroup: 'Ad_Group2',
-          utmAdgroupId: '178796882770',
-          utmTerm: 'market maker bot solana',
-          utmMatchtype: 'e',
-          utmContent: '768201400920',
-          device: 'm',
-          network: 'g',
-          landingPage: '/',
-          firstVisit: '2025-08-26T14:22:09.894Z',
-          lastVisit: '2025-08-26T14:22:09.894Z',
-          visitCount: 1,
-          conversionEvents: [],
-          isConverted: false,
-          metadata: {},
-          createdAt: '2025-08-26T14:22:09.895Z',
-          updatedAt: '2025-08-26T14:22:09.895Z'
-        },
-        {
-          id: '2',
-          sessionId: 'idx_1756215793841_7td16m2zl',
-          userId: 'user123',
-          utmSource: 'twitter',
-          utmMedium: 'social',
-          utmCampaign: 'organic_dm',
-          landingPage: '/create-bot',
-          firstVisit: '2025-08-26T13:00:00.000Z',
-          lastVisit: '2025-08-26T14:00:00.000Z',
-          visitCount: 3,
-          conversionEvents: [
-            {
-              type: 'user_registered',
-              data: { userId: 'user123', email: 'user@example.com' },
-              timestamp: '2025-08-26T14:00:00.000Z'
-            }
-          ],
-          isConverted: true,
-          conversionDate: '2025-08-26T14:00:00.000Z',
-          metadata: {},
-          createdAt: '2025-08-26T13:00:00.000Z',
-          updatedAt: '2025-08-26T14:00:00.000Z'
-        }
-      ];
+      console.log('📊 Fetching campaigns from API...');
       
-      setCampaigns(mockCampaigns);
+      const response = await fetch('/api/admin/campaigns/list');
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Campaigns received:', result);
+        
+        if (result.success && result.data?.campaigns) {
+          setCampaigns(result.data.campaigns);
+        } else {
+          console.warn('⚠️ API returned invalid data structure:', result);
+          setCampaigns([]);
+        }
+      } else {
+        console.warn('⚠️ Campaigns API returned error:', response.status);
+        setCampaigns([]);
+      }
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
+      console.error('❌ Error fetching campaigns:', error);
+      setCampaigns([]);
     } finally {
       setLoading(false);
     }
