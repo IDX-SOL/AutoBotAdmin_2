@@ -1,27 +1,19 @@
 import { NextResponse } from 'next/server';
+import adminApiService from '@/utils/adminApiService';
 
 export async function GET() {
   try {
-    // Use environment variable for backend URL, fallback to localhost for development
-    const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+    console.log('🔄 Fetching tokens list from backend via admin service...');
     
-    console.log('🔄 Fetching tokens list from backend:', `${BACKEND_URL}/admin-dev/tokens/list`);
-    
-    const response = await fetch(`${BACKEND_URL}/admin-dev/tokens/list`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await adminApiService.getAxiosInstance().get('/admin-dev/tokens/list');
 
-    if (response.ok) {
-      const data = await response.json();
+    if (response.status === 200) {
+      const data = response.data;
       console.log('✅ Tokens list received from backend:', data);
       return NextResponse.json(data);
     } else {
       console.warn('⚠️ Backend returned error status:', response.status);
-      const errorData = await response.text();
-      console.warn('Error details:', errorData);
+      console.warn('Error details:', response.data);
       
       return NextResponse.json(
         { 
@@ -32,7 +24,7 @@ export async function GET() {
         { status: response.status }
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Tokens list API error:', error);
     
     return NextResponse.json(

@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Use environment variable for backend URL, fallback to localhost for development
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+import adminApiService from '@/utils/adminApiService';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('📊 Fetching recent activity from backend...');
+    console.log('📊 Fetching recent activity from backend via admin service...');
     
-    const response = await fetch(`${BACKEND_URL}/admin-dev/dashboard/recent-activity`, {
-      method: 'GET',
+    const response = await adminApiService.getAxiosInstance().get('/admin-dev/dashboard/recent-activity', {
       headers: {
-        'Content-Type': 'application/json',
         // Forward any authorization headers if needed
         ...(request.headers.get('authorization') && {
           'Authorization': request.headers.get('authorization')!
@@ -18,8 +14,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (response.ok) {
-      const data = await response.json();
+    if (response.status === 200) {
+      const data = response.data;
       console.log('✅ Recent activity fetched successfully:', data);
       return NextResponse.json(data);
     } else {
@@ -33,7 +29,7 @@ export async function GET(request: NextRequest) {
         { status: response.status }
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Error fetching recent activity:', error);
     
     return NextResponse.json(
