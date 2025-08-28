@@ -8,6 +8,14 @@ import {
   Search,
   Calendar,
   Trash2,
+  Eye,
+  Edit,
+  Filter,
+  Table,
+  Grid3X3,
+  Bot,
+  Award,
+  Grid2X2,
 } from "lucide-react";
 
 export default function AdminUsers() {
@@ -16,6 +24,7 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [pagination, setPagination] = useState<{
     page: number;
     limit: number;
@@ -121,16 +130,123 @@ export default function AdminUsers() {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {/* <button className="p-2 text-gray-400 hover:text-white transition-colors">
+          <button className="p-2 text-gray-400 hover:text-white transition-colors">
             <Eye className="h-4 w-4" />
           </button>
           <button className="p-2 text-gray-400 hover:text-white transition-colors">
             <Edit className="h-4 w-4" />
-          </button> */}
+          </button>
           <button className="p-2 text-gray-400 hover:text-red-400 transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
+      </div>
+    </div>
+  );
+
+  const UserTable = () => (
+    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-700">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                User
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Campaign
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Bots
+              </th>
+              {/* <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Status
+              </th> */}
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Joined
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {users.map((user) => (
+              <tr key={user.id} className="hover:bg-gray-700/50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
+                      <UserIcon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-white">{user.username}</div>
+                      <div className="text-sm text-gray-400">{user.email}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    {user.campaignName ? (
+                      <div className="flex items-center space-x-2">
+                        <Award className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm text-white">{user.campaignName}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-500">No campaign</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    <Bot className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-white">{user.totalBots || 0}</span>
+                    <span className="text-xs text-gray-400">bots</span>
+                  </div>
+                </td>
+                {/* <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    user.isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </td> */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{new Date(user.createdAt).toLocaleDateString('en-IN', { 
+                      timeZone: 'Asia/Kolkata',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {new Date(user.createdAt).toLocaleTimeString('en-IN', { 
+                      timeZone: 'Asia/Kolkata',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <button className="text-blue-400 hover:text-blue-300 transition-colors p-1">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button className="text-green-400 hover:text-green-300 transition-colors p-1">
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button className="text-red-400 hover:text-red-300 transition-colors p-1">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -224,18 +340,51 @@ export default function AdminUsers() {
               type="button"
               className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
             >
-              {/* <Filter className="h-4 w-4" /> */}
+              <Filter className="h-4 w-4" />
               <span>Filter</span>
             </button>
           </form>
         </div>
 
-        {/* Users Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {users.map((user) => (
-            <UserCard key={user.id} user={user} />
-          ))}
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded-lg transition-colors ${
+                viewMode === 'table'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Table className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`p-2 rounded-lg transition-colors ${
+                viewMode === 'cards'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              <Grid2X2 className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="text-sm text-gray-400">
+            {viewMode === 'table' ? 'Table View' : 'Card View'}
+          </div>
         </div>
+
+        {/* Users Display */}
+        {viewMode === 'table' ? (
+          <UserTable />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {users.map((user) => (
+              <UserCard key={user.id} user={user} />
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
         {users.length === 0 && !loading && (

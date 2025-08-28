@@ -13,6 +13,7 @@ import {
   TrendingUp,
   User,
   BitcoinIcon,
+  Mail,
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Admins', href: '/admin/admins', icon: Shield },
   { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
   { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
+  { name: 'Emails', href: '/admin/emails', icon: Mail },
   // { name: 'Analytics', href: '#', icon: TrendingUpDownIcon },
   // { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];

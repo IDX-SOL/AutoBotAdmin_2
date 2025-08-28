@@ -18,6 +18,10 @@ export interface User {
   status: string;
   createdAt: string;
   updatedAt: string;
+  // Additional properties for detailed user view
+  campaignName?: string;
+  totalBots?: number;
+  isActive?: boolean;
 }
 
 export interface Bot {

@@ -10,7 +10,8 @@ import {
   AlertCircle,
   Activity,
   Database,
-  RefreshCw
+  RefreshCw,
+  Mail
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -464,6 +465,10 @@ export default function AdminDashboard() {
             <button onClick={() => router.push('/admin/tokens')} className="flex items-center justify-center p-4 bg-orange-600 hover:bg-orange-700 rounded-lg text-white font-medium transition-colors">
               <Database className="h-5 w-5 mr-2" />
               Tokens
+            </button>
+            <button onClick={() => router.push('/admin/emails')} className="flex items-center justify-center p-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-medium transition-colors">
+              <Mail className="h-5 w-5 mr-2" />
+              Send Emails
             </button>
           </div>
         </div>
