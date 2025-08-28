@@ -192,6 +192,18 @@ const adminApiService = {
   getLogs: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get('/admin/system/logs', { params }),
   
+  // Campaigns management
+  getCampaignsList: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/campaigns/list'),
+  getCampaignsStats: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/campaigns/stats'),
+  
+  // Tokens management
+  getTokensList: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/tokens/list'),
+  getTokensStats: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/tokens/stats'),
+  
   // Utility methods
   isAuthenticated: (): boolean => {
     if (typeof window === 'undefined') return false;

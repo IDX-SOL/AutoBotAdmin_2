@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import adminApiService from '@/utils/adminApiService';
 import { 
   Database, 
   TrendingUp, 
@@ -109,21 +110,21 @@ export default function AdminTokens() {
 
   const fetchTokens = async () => {
     try {
-      console.log('🪙 Fetching tokens from API...');
+      console.log('🪙 Fetching tokens from backend via admin service...');
       
-      const response = await fetch('/api/admin/tokens/list');
-      if (response.ok) {
-        const result = await response.json();
+      const response = await adminApiService.getTokensList();
+      if (response.status === 200) {
+        const result = response.data as { success: boolean; data?: { tokens: Token[] } };
         console.log('✅ Tokens received:', result);
         
         if (result.success && result.data?.tokens) {
           setTokens(result.data.tokens);
         } else {
-          console.warn('⚠️ API returned invalid data structure:', result);
+          console.warn('⚠️ Backend returned invalid data structure:', result);
           setTokens([]);
         }
       } else {
-        console.warn('⚠️ Tokens API returned error:', response.status);
+        console.warn('⚠️ Backend returned error:', response.status);
         setTokens([]);
       }
     } catch (error) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import adminApiService from '@/utils/adminApiService';
 import { 
   BarChart3, 
   Users, 
@@ -133,21 +134,21 @@ export default function AdminCampaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      console.log('📊 Fetching campaigns from API...');
+      console.log('📊 Fetching campaigns from backend via admin service...');
       
-      const response = await fetch('/api/admin/campaigns/list');
-      if (response.ok) {
-        const result = await response.json();
+      const response = await adminApiService.getCampaignsList();
+      if (response.status === 200) {
+        const result = response.data as { success: boolean; data?: { campaigns: Campaign[] } };
         console.log('✅ Campaigns received:', result);
         
         if (result.success && result.data?.campaigns) {
           setCampaigns(result.data.campaigns);
         } else {
-          console.warn('⚠️ API returned invalid data structure:', result);
+          console.warn('⚠️ Backend returned invalid data structure:', result);
           setCampaigns([]);
         }
       } else {
-        console.warn('⚠️ Campaigns API returned error:', response.status);
+        console.warn('⚠️ Backend returned error:', response.status);
         setCampaigns([]);
       }
     } catch (error) {
