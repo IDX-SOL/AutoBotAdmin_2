@@ -80,11 +80,11 @@ export default function AdminDashboard() {
 
   const fetchRecentActivity = async () => {
     try {
-      console.log('📊 Fetching recent activity from API...');
+      console.log('📊 Fetching recent activity from backend via admin service...');
       
-      const response = await fetch('/api/admin/dashboard/recent-activity');
-      if (response.ok) {
-        const result = await response.json();
+      const response = await adminApiService.getAxiosInstance().get('/admin-dev/dashboard/recent-activity');
+      if (response.status === 200) {
+        const result = response.data as { success: boolean; data?: { activities: Array<{ id: string; type: string; message: string; timestamp: string; user?: string; token?: string; campaign?: string; metadata?: Record<string, unknown> }> } };
         console.log('✅ Recent activity received:', result);
         
         if (result.success && result.data?.activities) {
@@ -99,23 +99,22 @@ export default function AdminDashboard() {
             campaign?: string;
             metadata?: Record<string, unknown>;
           }) => ({
-            id: activity.id,
+            id: parseInt(activity.id) || 0,
             type: activity.type,
             message: activity.message,
             timestamp: new Date(activity.timestamp),
-            user: activity.user || null,
-            token: activity.token || null,
-            campaign: activity.campaign || null,
-            metadata: activity.metadata || {}
+            user: activity.user || undefined,
+            token: activity.token || undefined,
+            campaign: activity.campaign || undefined
           }));
           
           setRecentActivity(transformedActivities);
         } else {
-          console.warn('⚠️ API returned invalid data structure:', result);
+          console.warn('⚠️ Backend returned invalid data structure:', result);
           setRecentActivity([]);
         }
       } else {
-        console.warn('⚠️ Recent activity API returned error:', response.status);
+        console.warn('⚠️ Backend returned error:', response.status);
         setRecentActivity([]);
       }
     } catch (error) {
@@ -126,10 +125,11 @@ export default function AdminDashboard() {
 
   const fetchCampaignStats = async () => {
     try {
-      // Fetch campaign statistics from your backend
-      const response = await fetch('/api/admin/campaigns/stats');
-      if (response.ok) {
-        const data = await response.json();
+      console.log('📊 Fetching campaign stats from backend via admin service...');
+      
+      const response = await adminApiService.getCampaignsStats();
+      if (response.status === 200) {
+        const data = response.data as { totalCampaigns?: number; conversionRate?: number; changeFromLastMonth?: number };
         console.log('📊 Campaign stats received:', data);
         setCampaignStats({
           totalCampaigns: data.totalCampaigns || 0,
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
           changeFromLastMonth: data.changeFromLastMonth || 0
         });
       } else {
-        console.warn('⚠️ Campaign stats API returned error:', response.status);
+        console.warn('⚠️ Backend returned error:', response.status);
         setCampaignStats({
           totalCampaigns: 0,
           conversionRate: 0,
@@ -156,17 +156,18 @@ export default function AdminDashboard() {
 
   const fetchTokenStats = async () => {
     try {
-      // Fetch token statistics from your backend
-      const response = await fetch('/api/admin/tokens/stats');
-      if (response.ok) {
-        const data = await response.json();
+      console.log('🪙 Fetching token stats from backend via admin service...');
+      
+      const response = await adminApiService.getTokensStats();
+      if (response.status === 200) {
+        const data = response.data as { totalTokens?: number; changeFromLastMonth?: number };
         console.log('🪙 Token stats received:', data);
         setTokenStats({
           totalTokens: data.totalTokens || 0,
           changeFromLastMonth: data.changeFromLastMonth || 0
         });
       } else {
-        console.warn('⚠️ Token stats API returned error:', response.status);
+        console.warn('⚠️ Backend returned error:', response.status);
         setTokenStats({
           totalTokens: 0,
           changeFromLastMonth: 0
