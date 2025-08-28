@@ -409,9 +409,17 @@ export default function EmailManagement() {
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
-                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; color: #333; }',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; color: #ffffff; background-color: #2d2d2d; line-height: 1.6; padding: 16px; }',
                   skin: 'oxide-dark',
-                  content_css: 'dark'
+                  content_css: 'dark',
+                  branding: false,
+                  elementpath: false,
+                  resize: true,
+                  statusbar: true,
+                  paste_data_images: true,
+                  relative_urls: false,
+                  remove_script_host: false,
+                  convert_urls: false
                 }}
               />
             </div>
