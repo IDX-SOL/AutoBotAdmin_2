@@ -1,5 +1,13 @@
 import adminApiService from './adminApiService';
 
+interface ErrorResponse {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
 export interface EmailData {
   subject: string;
   content: string;
@@ -47,11 +55,14 @@ class EmailService {
         success: false,
         message: response.data.message || 'Failed to send email'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error sending email:', error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as ErrorResponse).response?.data?.message 
+        : 'Failed to send email';
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to send email'
+        message: errorMessage || 'Failed to send email'
       };
     }
   }
@@ -93,11 +104,14 @@ class EmailService {
         success: false,
         message: response.data.message || 'Failed to save template'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving template:', error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as ErrorResponse).response?.data?.message 
+        : 'Failed to save template';
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to save template'
+        message: errorMessage || 'Failed to save template'
       };
     }
   }
@@ -120,11 +134,14 @@ class EmailService {
         success: false,
         message: response.data.message || 'Failed to update template'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating template:', error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as ErrorResponse).response?.data?.message 
+        : 'Failed to update template'
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to update template'
+        message: errorMessage || 'Failed to update template'
       };
     }
   }
@@ -147,11 +164,14 @@ class EmailService {
         success: false,
         message: response.data.message || 'Failed to delete template'
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting template:', error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as ErrorResponse).response?.data?.message 
+        : 'Failed to delete template'
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to delete template'
+        message: errorMessage || 'Failed to delete template'
       };
     }
   }
@@ -177,7 +197,7 @@ class EmailService {
   /**
    * Get email history
    */
-  async getEmailHistory(page: number = 1, limit: number = 20): Promise<{ emails: any[]; total: number; page: number; totalPages: number }> {
+  async getEmailHistory(page: number = 1, limit: number = 20): Promise<{ emails: unknown[]; total: number; page: number; totalPages: number }> {
     try {
       const response = await adminApiService.getAxiosInstance().get(`${this.baseUrl}/history`, {
         params: { page, limit }
@@ -229,7 +249,7 @@ class EmailService {
    */
   formatEmailContent(content: string): string {
     // Remove any potentially dangerous content
-    let formatted = content
+    const formatted = content
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '');
@@ -238,4 +258,5 @@ class EmailService {
   }
 }
 
-export default new EmailService(); 
+const emailService = new EmailService();
+export default emailService; 

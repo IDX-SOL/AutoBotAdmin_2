@@ -12,7 +12,6 @@ import {
   Edit,
   Filter,
   Table,
-  Grid3X3,
   Bot,
   Award,
   Grid2X2,

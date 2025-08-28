@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Editor } from '@tinymce/tinymce-react';
-import { Mail, Users, Send, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { Users, Send, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import adminApiService from '@/utils/adminApiService';
 import emailService, { EmailTemplate } from '@/utils/emailService';
 
