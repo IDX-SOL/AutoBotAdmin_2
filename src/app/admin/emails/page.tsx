@@ -36,6 +36,13 @@ export default function EmailManagement() {
     fetchTemplates();
   }, []);
 
+  // Debug notification state changes
+  useEffect(() => {
+    if (notification) {
+      console.log('🔍 Notification state changed:', notification);
+    }
+  }, [notification]);
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -209,10 +216,14 @@ export default function EmailManagement() {
         templateId: selectedTemplate || undefined
       };
 
+      console.log('📧 Sending email with data:', emailData);
       const result = await emailService.sendEmail(emailData);
+      console.log('📧 Email service response:', result);
       
       if (result.success) {
-        showNotification('success', `Email sent successfully to ${targetUsers.length} user(s)!`);
+        const successMessage = `Email sent successfully to ${targetUsers.length} user(s)!`;
+        console.log('✅ Email success:', successMessage);
+        showNotification('success', successMessage);
         
         // Reset form
         setEmailSubject('');
@@ -220,6 +231,7 @@ export default function EmailManagement() {
         setSelectedUsers([]);
         setSelectedTemplate(null);
       } else {
+        console.log('❌ Email failed:', result.message);
         showNotification('error', result.message);
       }
       
@@ -232,8 +244,14 @@ export default function EmailManagement() {
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
+    console.log(`🔔 Showing ${type} notification:`, message);
     setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
+    // Keep notification visible longer for success messages
+    const duration = type === 'success' ? 8000 : 5000;
+    setTimeout(() => {
+      console.log(`🔔 Clearing ${type} notification`);
+      setNotification(null);
+    }, duration);
   };
 
   const filteredUsers = users.filter(user =>
@@ -258,18 +276,26 @@ export default function EmailManagement() {
       <div className="space-y-6">
         {/* Notification */}
         {notification && (
-          <div className={`p-4 rounded-lg border ${
+          <div className={`p-4 rounded-lg border-2 ${
             notification.type === 'success' 
-              ? 'bg-green-900/50 border-green-600 text-green-300' 
-              : 'bg-red-900/50 border-red-600 text-red-300'
+              ? 'bg-green-900/50 border-green-500 text-green-200 shadow-lg shadow-green-500/20' 
+              : 'bg-red-900/50 border-red-500 text-red-200 shadow-lg shadow-red-500/20'
           }`}>
-            <div className="flex items-center space-x-2">
-              {notification.type === 'success' ? (
-                <CheckCircle className="h-5 w-5" />
-              ) : (
-                <AlertCircle className="h-5 w-5" />
-              )}
-              <span>{notification.message}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {notification.type === 'success' ? (
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-400" />
+                )}
+                <span className="font-medium">{notification.message}</span>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                ×
+              </button>
             </div>
           </div>
         )}
