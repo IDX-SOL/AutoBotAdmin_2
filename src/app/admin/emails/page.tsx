@@ -275,30 +275,7 @@ export default function EmailManagement() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Notification */}
-        {notification && (
-          <div className={`p-4 rounded-lg border-2 ${
-            notification.type === 'success' 
-              ? 'bg-green-900/50 border-green-500 text-green-200 shadow-lg shadow-green-500/20' 
-              : 'bg-red-900/50 border-red-500 text-red-200 shadow-lg shadow-red-500/20'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {notification.type === 'success' ? (
-                  <CheckCircle className="h-5 w-5 text-green-400" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-400" />
-                )}
-                <span className="font-medium">{notification.message}</span>
-              </div>
-              <button
-                onClick={() => setNotification(null)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
+        
 
         {/* Header */}
         <div className="flex justify-between items-start">
@@ -479,7 +456,30 @@ export default function EmailManagement() {
             </div>
           </div>
         )}
-
+        {notification && (
+          <div className={`p-4 rounded-lg border-2 ${
+            notification.type === 'success' 
+              ? 'bg-green-900/50 border-green-500 text-green-200 shadow-lg shadow-green-500/20' 
+              : 'bg-red-900/50 border-red-500 text-red-200 shadow-lg shadow-red-500/20'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {notification.type === 'success' ? (
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-400" />
+                )}
+                <span className="font-medium">{notification.message}</span>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
         {/* User Selection (for individual and bulk emails) */}
         {(emailType === 'individual' || emailType === 'bulk') && (
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
