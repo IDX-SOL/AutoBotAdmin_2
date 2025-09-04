@@ -15,6 +15,8 @@ import {
   Bot,
   Award,
   Grid2X2,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 
 export default function AdminUsers() {
@@ -125,6 +127,21 @@ export default function AdminUsers() {
                 <Calendar className="h-3 w-3 inline mr-1" />
                 {new Date(user.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
               </span>
+              {user.platform && (
+                <span className="text-xs text-gray-500 flex items-center">
+                  {user.platform === 'mobile' ? (
+                    <Smartphone className="h-3 w-3 inline mr-1" />
+                  ) : (
+                    <Monitor className="h-3 w-3 inline mr-1" />
+                  )}
+                  {user.platform}
+                </span>
+              )}
+              {user.device && (
+                <span className="text-xs text-gray-500">
+                  {user.device}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -151,6 +168,12 @@ export default function AdminUsers() {
             <tr>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 User
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Platform
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Device
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Campaign
@@ -182,6 +205,27 @@ export default function AdminUsers() {
                       <div className="text-sm text-gray-400">{user.email}</div>
                     </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    {user.platform ? (
+                      <>
+                        {user.platform === 'mobile' ? (
+                          <Smartphone className="h-4 w-4 text-blue-500" />
+                        ) : (
+                          <Monitor className="h-4 w-4 text-green-500" />
+                        )}
+                        <span className="text-sm text-white capitalize">{user.platform}</span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-gray-500">Unknown</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm text-gray-300">
+                    {user.device || 'Unknown'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">

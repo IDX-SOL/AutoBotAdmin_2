@@ -22,6 +22,8 @@ export interface User {
   campaignName?: string;
   totalBots?: number;
   isActive?: boolean;
+  platform?: string;
+  device?: string;
 }
 
 export interface Bot {
@@ -36,6 +38,7 @@ export interface Bot {
   tokenSymbol?: string;
   userWallet?: string;
   ownerWalletAddress?: string;
+  middleWalletAddress?: string;
   tokenAddress?: string;
   gasFees?: number;
   deletedAt?: string;
@@ -43,6 +46,8 @@ export interface Bot {
     id?: string;
     username?: string;
     email?: string;
+    platform?: string;
+    device?: string;
   };
   // Optional fields that might not be returned by the backend
   lastTradeAt?: string;

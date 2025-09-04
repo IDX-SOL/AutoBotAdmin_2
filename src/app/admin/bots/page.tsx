@@ -12,9 +12,11 @@ import {
   ExternalLink,
   Wallet,
   Trash2,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import Link from "next/link";
-// import { useToast } from '@/components/Toast/ToastContext';
+import { useToast } from '@/components/Toast/ToastContext';
 
 export default function AdminBots() {
   const [bots, setBots] = useState<Bot[]>([]);
@@ -34,7 +36,7 @@ export default function AdminBots() {
     total: 0,
     totalPages: 1
   });
-  // const { showSuccess } = useToast();
+  const { showSuccess, showError } = useToast();
 
   const fetchBots = useCallback(async () => {
     try {
@@ -107,6 +109,34 @@ export default function AdminBots() {
   useEffect(() => {
     fetchBots();
   }, [fetchBots]);
+ const handleDelete = async (id: string, botName?: string) => {
+  // Show confirmation dialog
+  const confirmed = window.confirm(
+    `Are you sure you want to delete the bot "${botName || 'this bot'}"? This action cannot be undone.`
+  );
+  
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    console.log("Deleting bot:", id);
+    const res = await adminApiService.deleteBot(id);
+    console.log("Bot deleted:", res);
+    
+    // Show success notification
+    showSuccess("Bot deleted successfully!");
+    
+    // Refresh the bots list
+    await fetchBots();
+  } catch (err) {
+    console.error("Error deleting bot:", err);
+    
+    // Show error notification
+    const errorMessage = err instanceof Error ? err.message : "Failed to delete bot";
+    showError(`Error: ${errorMessage}`);
+  }
+ };
 
   // const getStatusColor = (status: string | undefined) => {
   //   if (!status) return "bg-gray-500/20 text-gray-400";
@@ -156,7 +186,7 @@ export default function AdminBots() {
 
     if (!bot) return null;
 
-    console.log("Rendering bot card:", bot);
+    // console.log("Rendering bot card:", bot);
 
     const handleCopy = (text: string, field: string) => {
       navigator.clipboard.writeText(text);
@@ -167,9 +197,11 @@ export default function AdminBots() {
     const getStatusBadge = (status: string | undefined) => {
       const statusConfig: Record<string, { color: string; icon: string }> = {
         running: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: '▶' },
-        stopped: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '⏹' },
+        stopped: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: '⏹' },
         paused: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: '⏸' },
-        error: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' }
+        error: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' },
+        refunded: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' },
+        refunding: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: '' }
       };
       
       const config = statusConfig[status || 'stopped'] || statusConfig.stopped;
@@ -200,6 +232,25 @@ export default function AdminBots() {
               <p className="text-xs text-gray-400 truncate max-w-40">
                 {bot.user?.email || 'No description'}
               </p>
+              {(bot.user?.platform || bot.user?.device) && (
+                <div className="flex items-center gap-2 mt-1">
+                  {bot.user?.platform && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      {bot.user.platform === 'mobile' ? (
+                        <Smartphone className="h-3 w-3" />
+                      ) : (
+                        <Monitor className="h-3 w-3" />
+                      )}
+                      {bot.user.platform}
+                    </span>
+                  )}
+                  {bot.user?.device && (
+                    <span className="text-xs text-gray-500">
+                      {bot.user.device}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
@@ -219,7 +270,7 @@ export default function AdminBots() {
         </div>
 
         {/* Compact Wallet Info */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="grid xl:grid-cols-4 grid-cols-2 gap-2 mb-3">
           <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-xs text-gray-400 mb-1">User Wallet</p>
             <div className="flex items-center justify-center gap-1">
@@ -265,6 +316,32 @@ export default function AdminBots() {
               </button>
               <Link
                 href={`https://solscan.io/address/${bot.ownerWalletAddress}`}
+                target="_blank"
+                className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                title="View on Solscan"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+          <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-xs text-gray-400 mb-1">Bot Middle Wallet</p>
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-xs text-gray-300 font-mono">
+                {bot.middleWalletAddress ? `${bot.middleWalletAddress.slice(0, 4)}...${bot.middleWalletAddress.slice(-4)}` : 'N/A'}
+              </span>
+              <button
+                onClick={() => bot.middleWalletAddress && handleCopy(bot.middleWalletAddress, 'botWallet')}
+                className={`p-1 rounded transition-colors ${
+                  copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
+                }`}
+                title="Copy bot wallet"
+                disabled={!bot.middleWalletAddress}
+              >
+                {copiedField === 'botWallet' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              </button>
+              <Link
+                href={`https://solscan.io/address/${bot.middleWalletAddress}`}
                 target="_blank"
                 className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
                 title="View on Solscan"
@@ -324,7 +401,7 @@ export default function AdminBots() {
             )}
             {bot.deletedAt && (
               <span className="flex items-center gap-1 text-red-400">
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3 w-3 cursor-pointer" onClick={() => handleDelete(bot.id, bot.botName)} />
                  {new Date(bot.deletedAt).toLocaleString('en-IN', { 
                   timeZone: 'Asia/Kolkata',
                   dateStyle: 'short',
@@ -489,3 +566,4 @@ export default function AdminBots() {
     </AdminLayout>
   );
 }
+
