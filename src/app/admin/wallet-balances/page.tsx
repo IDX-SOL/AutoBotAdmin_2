@@ -173,8 +173,8 @@ export default function WalletBalancesPage() {
                   <p className="text-blue-100 text-sm font-medium">Total Wallets</p>
                   <p className="text-3xl font-bold mt-2">{summary?.today?.totalWallets}</p>
                   <p className="text-blue-200 text-xs mt-1">
-                    {summary.changes.walletCountChange > 0 ? '+' : ''}
-                    {summary.changes.walletCountChange} from yesterday
+                    {summary?.changes?.walletCountChange > 0 ? '+' : ''}
+                    {summary?.changes?.walletCountChange} from yesterday
                   </p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl">
@@ -188,11 +188,11 @@ export default function WalletBalancesPage() {
                 <div>
                   <p className="text-yellow-100 text-sm font-medium">Total SOL</p>
                   <p className="text-3xl font-bold mt-2">
-                    {summary.today.totalSolBalance.toFixed(4)} SOL
+                    {summary?.today?.totalSolBalance.toFixed(4)} SOL
                   </p>
                   <p className="text-yellow-200 text-xs mt-1">
-                    {summary.changes.solBalanceChange > 0 ? '+' : ''}
-                    {summary.changes.solBalanceChange.toFixed(4)} from yesterday
+                    {summary?.changes?.solBalanceChange > 0 ? '+' : ''}
+                    {summary?.changes?.solBalanceChange.toFixed(4)} from yesterday
                   </p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl">
@@ -205,10 +205,10 @@ export default function WalletBalancesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm font-medium">Token Types</p>
-                  <p className="text-3xl font-bold mt-2">{summary.today.totalTokenTypes}</p>
+                  <p className="text-3xl font-bold mt-2">{summary?.today?.totalTokenTypes}</p>
                   <p className="text-purple-200 text-xs mt-1">
-                    {summary.changes.tokenTypesChange > 0 ? '+' : ''}
-                    {summary.changes.tokenTypesChange} from yesterday
+                    {summary?.changes?.tokenTypesChange > 0 ? '+' : ''}
+                    {summary?.changes?.tokenTypesChange} from yesterday
                   </p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl">
@@ -228,7 +228,7 @@ export default function WalletBalancesPage() {
                     </span>
                   </div>
                   <p className="text-green-200 text-xs mt-1">
-                    Next: {cronStatus?.nextRun ? new Date(cronStatus.nextRun).toLocaleString('en-IN') : 'N/A'}
+                    Next: {cronStatus?.nextRun ? new Date(cronStatus?.nextRun).toLocaleString('en-IN') : 'N/A'}     
                   </p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl">
@@ -287,18 +287,18 @@ export default function WalletBalancesPage() {
                             </div>
                             <div>
                               <span className="font-mono text-lg font-semibold text-white">
-                                {formatWalletAddress(wallet.walletAddress)}
+                                {formatWalletAddress(wallet?.walletAddress)}
                               </span>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  wallet.hasAnyBalance 
+                                  wallet?.hasAnyBalance 
                                     ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                                     : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                                 }`}>
-                                  {wallet.hasAnyBalance ? 'ACTIVE' : 'EMPTY'}
+                                  {wallet?.hasAnyBalance ? 'ACTIVE' : 'EMPTY'}
                                 </span>
                                 <span className="text-sm text-gray-400">
-                                  {format(new Date(wallet.checkTimestamp), 'HH:mm:ss')}
+                                  {format(new Date(wallet?.checkTimestamp), 'HH:mm:ss')}
                                 </span>
                               </div>
                             </div>
@@ -309,26 +309,26 @@ export default function WalletBalancesPage() {
                           <div className="bg-gray-600/30 rounded-lg p-4">
                             <p className="text-sm font-medium text-gray-300 mb-2">SOL Balance</p>
                             <p className="text-2xl font-bold text-yellow-400 font-mono">
-                              {formatSolBalance(wallet.solBalance)} SOL
+                              {formatSolBalance(wallet?.solBalance)} SOL
                             </p>
                           </div>
                           
                           <div className="bg-gray-600/30 rounded-lg p-4">
                             <p className="text-sm font-medium text-gray-300 mb-2">Token Types</p>
                             <p className="text-2xl font-bold text-purple-400">
-                              {wallet.totalTokenTypes} types
+                              {wallet?.totalTokenTypes} types
                             </p>
                           </div>
                           
                           <div className="bg-gray-600/30 rounded-lg p-4">
                             <p className="text-sm font-medium text-gray-300 mb-2">Status</p>
                             <div className="flex gap-2">
-                              {wallet.hasSolBalance && (
+                              {wallet?.hasSolBalance && (
                                 <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium border border-yellow-500/30">
                                   SOL
                                 </span>
                               )}
-                              {wallet.hasTokens && (
+                              {wallet?.hasTokens && (
                                 <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-medium border border-purple-500/30">
                                   Tokens
                                 </span>
@@ -337,14 +337,14 @@ export default function WalletBalancesPage() {
                           </div>
                         </div>
 
-                        {wallet.tokenBalances.length > 0 && (
+                        {wallet?.tokenBalances?.length > 0 && (
                           <div className="mt-6">
                             <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                               <Coins className="h-5 w-5" />
                               Token Holdings
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {wallet.tokenBalances.map((token, index) => (
+                              {wallet?.tokenBalances?.map((token, index) => (
                                 <div key={index} className="flex justify-between items-center p-4 bg-gray-600/30 rounded-lg border border-gray-500/30">
                                   <span className="font-medium text-white">{token.token}</span>
                                   <span className="text-sm font-mono text-gray-300">
@@ -356,13 +356,13 @@ export default function WalletBalancesPage() {
                           </div>
                         )}
 
-                        {wallet.errorMessage && (
+                        {wallet?.errorMessage && (
                           <div className="mt-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
                             <div className="flex items-center gap-2 text-red-400 font-medium mb-2">
                               <AlertCircle className="h-4 w-4" />
                               Error Details
                             </div>
-                            <p className="text-red-300 text-sm">{wallet.errorMessage}</p>
+                            <p className="text-red-300 text-sm">{wallet?.errorMessage}</p>
                           </div>
                         )}
                       </div>
@@ -424,18 +424,18 @@ export default function WalletBalancesPage() {
                             </div>
                             <div>
                               <span className="font-mono text-lg font-semibold text-white">
-                                {formatWalletAddress(wallet.walletAddress)}
+                                {formatWalletAddress(wallet?.walletAddress)}
                               </span>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  wallet.hasAnyBalance 
+                                  wallet?.hasAnyBalance 
                                     ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                                     : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                                 }`}>
-                                  {wallet.hasAnyBalance ? 'ACTIVE' : 'EMPTY'}
+                                  {wallet?.hasAnyBalance ? 'ACTIVE' : 'EMPTY'}
                                 </span>
                                 <span className="text-sm text-gray-400">
-                                  {format(new Date(wallet.checkTimestamp), 'HH:mm:ss')}
+                                  {format(new Date(wallet?.checkTimestamp), 'HH:mm:ss')}
                                 </span>
                               </div>
                             </div>
@@ -446,26 +446,26 @@ export default function WalletBalancesPage() {
                           <div className="bg-gray-600/30 rounded-lg p-4">
                             <p className="text-sm font-medium text-gray-300 mb-2">SOL Balance</p>
                             <p className="text-2xl font-bold text-yellow-400 font-mono">
-                              {formatSolBalance(wallet.solBalance)} SOL
+                              {formatSolBalance(wallet?.solBalance)} SOL
                             </p>
                           </div>
                           
                           <div className="bg-gray-600/30 rounded-lg p-4">
                             <p className="text-sm font-medium text-gray-300 mb-2">Token Types</p>
                             <p className="text-2xl font-bold text-purple-400">
-                              {wallet.totalTokenTypes} types
+                              {wallet?.totalTokenTypes} types
                             </p>
                           </div>
                           
                           <div className="bg-gray-600/30 rounded-lg p-4">
                             <p className="text-sm font-medium text-gray-300 mb-2">Status</p>
                             <div className="flex gap-2">
-                              {wallet.hasSolBalance && (
+                              {wallet?.hasSolBalance && (
                                 <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium border border-yellow-500/30">
                                   SOL
                                 </span>
                               )}
-                              {wallet.hasTokens && (
+                              {wallet?.hasTokens && (
                                 <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-medium border border-purple-500/30">
                                   Tokens
                                 </span>
@@ -474,14 +474,14 @@ export default function WalletBalancesPage() {
                           </div>
                         </div>
 
-                        {wallet.tokenBalances.length > 0 && (
+                        {wallet?.tokenBalances?.length > 0 && (
                           <div className="mt-6">
                             <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                               <Coins className="h-5 w-5" />
                               Token Holdings
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {wallet.tokenBalances.map((token, index) => (
+                              {wallet?.tokenBalances?.map((token, index) => (
                                 <div key={index} className="flex justify-between items-center p-4 bg-gray-600/30 rounded-lg border border-gray-500/30">
                                   <span className="font-medium text-white">{token.token}</span>
                                   <span className="text-sm font-mono text-gray-300">
@@ -493,13 +493,13 @@ export default function WalletBalancesPage() {
                           </div>
                         )}
 
-                        {wallet.errorMessage && (
+                        {wallet?.errorMessage && (
                           <div className="mt-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
                             <div className="flex items-center gap-2 text-red-400 font-medium mb-2">
                               <AlertCircle className="h-4 w-4" />
                               Error Details
                             </div>
-                            <p className="text-red-300 text-sm">{wallet.errorMessage}</p>
+                            <p className="text-red-300 text-sm">{wallet?.errorMessage}</p>
                           </div>
                         )}
                       </div>
