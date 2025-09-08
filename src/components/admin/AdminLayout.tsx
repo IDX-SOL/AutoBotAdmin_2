@@ -14,6 +14,7 @@ import {
   User,
   BitcoinIcon,
   Mail,
+  Wallet,
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 
@@ -24,7 +25,10 @@ const navigation = [
   { name: 'Admins', href: '/admin/admins', icon: Shield },
   { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
   { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
+  { name: 'Wallet Balances', href: '/admin/wallet-balances', icon: Wallet },
   { name: 'Emails', href: '/admin/emails', icon: Mail },
+  { name: 'Email Monitoring', href: '/admin/email-monitoring', icon: Mail },
+  { name: 'Email Automation', href: '/admin/email-automation', icon: Mail },
   // { name: 'Analytics', href: '#', icon: TrendingUpDownIcon },
   // { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];

@@ -470,6 +470,10 @@ export default function AdminDashboard() {
               <Mail className="h-5 w-5 mr-2" />
               Send Emails
             </button>
+            <button onClick={() => router.push('/admin/email-monitoring')} className="flex items-center justify-center p-4 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white font-medium transition-colors">
+              <Mail className="h-5 w-5 mr-2" />
+              Email Monitoring
+            </button>
           </div>
         </div>
       </div>

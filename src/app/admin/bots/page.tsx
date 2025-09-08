@@ -14,6 +14,10 @@ import {
   Trash2,
   Smartphone,
   Monitor,
+  CheckCheck,
+  X,
+  CheckCheckIcon,
+  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/Toast/ToastContext';
@@ -266,6 +270,8 @@ export default function AdminBots() {
                 {bot?.tokenSymbol || "N/A"}
               </p>
             </div>
+           
+            
           </div>
         </div>
 
@@ -410,7 +416,31 @@ export default function AdminBots() {
               </span>
             )}
           </div>
-          
+          {/* <div className="text-center">
+              <p className="text-gray-400">First Rechage</p>
+              <p className="text-white font-semibold truncate max-w-16">
+                {bot?.firstRechageDate?"Yes":"No"}
+              </p>
+            </div> */}
+            <div className="flex items-center gap-2">
+            <div
+            className={`inline-flex items-center gap-2 px-3 py-1.5 ${bot?.firstRechageDate?"bg-green-600 hover:bg-green-700 text-white":"bg-red-600 hover:bg-red-700 text-white"} text-xs font-medium rounded-md transition-colors ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            onClick={() => setIsLoading(true)}
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                <span>Loading</span>
+              </>
+            ) : (
+              <>
+                {bot?.firstRechageDate?<CheckCircle2 className="h-3 w-3" />:<X className="h-3 w-3" />}
+                <span>First Rechage</span>
+              </>
+            )}
+          </div>
           <Link
             href={`/admin/bots/${bot.id}/trade-wallets`}
             className={`inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors ${
@@ -429,7 +459,7 @@ export default function AdminBots() {
                 <span>Trade Wallets</span>
               </>
             )}
-          </Link>
+          </Link></div>
         </div>
       </div>
     );
