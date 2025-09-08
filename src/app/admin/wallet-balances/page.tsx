@@ -171,7 +171,7 @@ export default function WalletBalancesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm font-medium">Total Wallets</p>
-                  <p className="text-3xl font-bold mt-2">{summary.today.totalWallets}</p>
+                  <p className="text-3xl font-bold mt-2">{summary?.today?.totalWallets}</p>
                   <p className="text-blue-200 text-xs mt-1">
                     {summary.changes.walletCountChange > 0 ? '+' : ''}
                     {summary.changes.walletCountChange} from yesterday
