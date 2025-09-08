@@ -14,9 +14,7 @@ import {
   Trash2,
   Smartphone,
   Monitor,
-  CheckCheck,
   X,
-  CheckCheckIcon,
   CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";

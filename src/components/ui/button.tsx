@@ -38,8 +38,8 @@ export interface ButtonProps
   asChild?: boolean
 }
 
-type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
-type ButtonSize = "default" | "sm" | "lg" | "icon"
+// type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+// type ButtonSize = "default" | "sm" | "lg" | "icon"
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {

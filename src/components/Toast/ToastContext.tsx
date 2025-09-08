@@ -39,7 +39,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     const id = Date.now() + Math.random().toString();
     const newToast: Toast = { id, message, type, duration };
     
-    setToasts(prev => [newToast]); // Replace all toasts with the new one
+    setToasts(() => [newToast]); // Replace all toasts with the new one
     
     return id;
   }, []);
