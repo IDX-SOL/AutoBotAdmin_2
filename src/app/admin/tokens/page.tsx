@@ -3,16 +3,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import adminApiService from '@/utils/adminApiService';
-import { 
-  Database, 
-  TrendingUp, 
-  Search, 
-  Download, 
-  Eye, 
+import {
+  Database,
+  TrendingUp,
+  Search,
+  Download,
+  Eye,
   BarChart3,
   ExternalLink,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface Token {
   id: string;
@@ -111,12 +112,12 @@ export default function AdminTokens() {
   const fetchTokens = async () => {
     try {
       console.log('🪙 Fetching tokens from backend via admin service...');
-      
+
       const response = await adminApiService.getTokensList();
       if (response.status === 200) {
         const result = response.data as { success: boolean; data?: { tokens: Token[] } };
         console.log('✅ Tokens received:', result);
-        
+
         if (result.success && result.data?.tokens) {
           setTokens(result.data.tokens);
         } else {
@@ -167,12 +168,12 @@ export default function AdminTokens() {
   const formatCurrency = (value: number | string | undefined | null) => {
     // Convert to number and handle invalid values
     const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
-    
+
     // Check if the value is a valid number
     if (isNaN(numValue) || numValue === 0) {
       return '$0.00';
     }
-    
+
     if (numValue >= 1e9) return `$${(numValue / 1e9).toFixed(2)}B`;
     if (numValue >= 1e6) return `$${(numValue / 1e6).toFixed(2)}M`;
     if (numValue >= 1e3) return `$${(numValue / 1e3).toFixed(2)}K`;
@@ -255,11 +256,10 @@ export default function AdminTokens() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                    activeTab === tab.id
+                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${activeTab === tab.id
                       ? 'border-blue-500 text-blue-400'
                       : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                  }`}
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{tab.name}</span>
@@ -345,9 +345,9 @@ export default function AdminTokens() {
                       <th className="px-6 py-3">Price</th>
                       <th className="px-6 py-3">Market Cap</th>
                       <th className="px-6 py-3">Volume (24h)</th>
-                      <th className="px-6 py-3">Status</th>
+                      {/* <th className="px-6 py-3">Status</th> */}
                       <th className="px-6 py-3">Created</th>
-                      <th className="px-6 py-3">Actions</th>
+                      {/* <th className="px-6 py-3">Actions</th> */}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-700">
@@ -360,14 +360,20 @@ export default function AdminTokens() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-gray-300 font-mono text-xs">
-                              {token.tokenAddress.slice(0, 8)}...{token.tokenAddress.slice(-8)}
-                            </span>
-                            <button className="text-blue-400 hover:text-blue-300">
-                              <ExternalLink className="h-3 w-3" />
-                            </button>
-                          </div>
+                            <div className="flex items-center justify-start gap-1">
+                              <span className="text-xs text-gray-300 font-mono">
+                                {token.tokenAddress ? `${token.tokenAddress.slice(0, 8)}...${token.tokenAddress.slice(-8)}` : 'N/A'}
+                              </span>
+                             
+                              <Link
+                                href={`https://dexscreener.com/solana/${token.tokenAddress}`}
+                                target="_blank"
+                                className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                              title="View on DexScreener"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </Link>
+                            </div>
                         </td>
                         <td className="px-6 py-4 text-gray-300">{token.price}</td>
                         <td className="px-6 py-4 text-gray-300">
@@ -376,7 +382,7 @@ export default function AdminTokens() {
                         <td className="px-6 py-4 text-gray-300">
                           {formatCurrency(token.volume24h || 0)}
                         </td>
-                        <td className="px-6 py-4">
+                        {/* <td className="px-6 py-4">
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             token.priceUsd && token.priceUsd > 0
                               ? 'bg-green-600 text-white' 
@@ -384,15 +390,15 @@ export default function AdminTokens() {
                           }`}>
                             {token.priceUsd && token.priceUsd > 0 ? 'Active' : 'Inactive'}
                           </span>
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 text-gray-300">
-                          {new Date(token.createdAt).toLocaleDateString()}
+                          {new Date(token.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                         </td>
-                        <td className="px-6 py-4">
+                        {/* <td className="px-6 py-4">
                           <button className="text-blue-400 hover:text-blue-300">
                             <Eye className="h-4 w-4" />
                           </button>
-                        </td>
+                        </td> */}
                       </tr>
                     ))}
                   </tbody>

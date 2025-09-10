@@ -384,7 +384,7 @@ export default function AdminCampaigns() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-gray-300">
-                          {new Date(campaign.createdAt).toLocaleDateString()}
+                          {new Date(campaign.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                         </td>
                         <td className="px-6 py-4">
                           <button className="text-blue-400 hover:text-blue-300">
