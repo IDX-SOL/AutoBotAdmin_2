@@ -5,7 +5,8 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { Editor } from '@tinymce/tinymce-react';
 import { Users, Send, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import adminApiService from '@/utils/adminApiService';
-import emailService, { EmailTemplate } from '@/utils/emailService';
+import emailService from '@/utils/emailService';
+import { EmailTemplate } from '@/utils/adminApiService';
 
 interface User {
   id: string;
@@ -110,14 +111,24 @@ export default function EmailManagement() {
             name: 'Welcome Email',
             subject: 'Welcome to AutoBot Platform',
             content: '<h2>Welcome to AutoBot!</h2><p>We\'re excited to have you on board.</p>',
-            createdAt: new Date().toISOString()
+            createdBy: 1,
+            isActive: true,
+            category: 'welcome',
+            tags: ['welcome', 'onboarding'],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           },
           {
             id: 2,
             name: 'Maintenance Notice',
             subject: 'Scheduled Maintenance Notice',
             content: '<h2>Maintenance Notice</h2><p>We will be performing scheduled maintenance.</p>',
-            createdAt: new Date().toISOString()
+            createdBy: 1,
+            isActive: true,
+            category: 'maintenance',
+            tags: ['maintenance', 'notice'],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }
         ];
         setTemplates(mockTemplates);
@@ -133,14 +144,24 @@ export default function EmailManagement() {
           name: 'Welcome Email',
           subject: 'Welcome to AutoBot Platform',
           content: '<h2>Welcome to AutoBot!</h2><p>We\'re excited to have you on board.</p>',
-          createdAt: new Date().toISOString()
+          createdBy: 1,
+          isActive: true,
+          category: 'welcome',
+          tags: ['welcome', 'onboarding'],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         },
         {
           id: 2,
           name: 'Maintenance Notice',
           subject: 'Scheduled Maintenance Notice',
           content: '<h2>Maintenance Notice</h2><p>We will be performing scheduled maintenance.</p>',
-          createdAt: new Date().toISOString()
+          createdBy: 1,
+          isActive: true,
+          category: 'maintenance',
+          tags: ['maintenance', 'notice'],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
       ];
       setTemplates(mockTemplates);
