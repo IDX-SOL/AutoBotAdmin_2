@@ -23,9 +23,9 @@ import {
   Send,
   Settings,
   FileText,
-  Calendar
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { EmailLog } from '@/utils/adminApiService';
 
 interface EmailStats {
   totalEmails: number;
@@ -45,9 +45,9 @@ const EmailAutomationPage = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  const [emailHistory, setEmailHistory] = useState<any[]>([]);
+  const [emailHistory, setEmailHistory] = useState<EmailLog[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [selectedEmail, setSelectedEmail] = useState<EmailLog | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Fetch email automation statistics
@@ -638,7 +638,7 @@ const EmailAutomationPage = () => {
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4" />
                   <p>Email templates will be loaded here once initialized.</p>
-                  <p className="text-sm">Click "Initialize Templates" to create the default email templates.</p>
+                  <p className="text-sm">Click &quot;Initialize Templates&quot; to create the default email templates.</p>
                 </div>
               </div>
             </CardContent>

@@ -220,7 +220,7 @@ export interface EmailLog {
   error?: string;
   emailProvider?: string;
   messageId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   user?: {

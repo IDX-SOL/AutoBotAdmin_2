@@ -500,11 +500,11 @@ const EmailMonitoringPage = () => {
                             }`}>
                               {email.status.toUpperCase()}
                             </span>
-                            {email.metadata?.emailType && (
+                            {/* {email.metadata?.emailType && (
                               <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-600/50 text-gray-300 border border-gray-500/50">
                                 {formatEmailType(email.metadata.emailType)}
                               </span>
-                            )}
+                            )} */}
                           </div>
                         </div>
                         
