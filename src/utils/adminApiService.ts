@@ -257,7 +257,7 @@ export interface EmailHistoryResponse {
 
 // Create admin axios instance with different configuration
 const adminAxiosInstance: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://apiautobot.idxsolana.io',
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
