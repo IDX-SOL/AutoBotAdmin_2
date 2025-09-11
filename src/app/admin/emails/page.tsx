@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import JoditEditor from 'jodit-react';
+import dynamic from 'next/dynamic';
+
+const JoditEditor = dynamic(() => import('jodit-react'), { 
+  ssr: false,
+  loading: () => <div className="h-96 bg-gray-700 rounded-md flex items-center justify-center text-gray-400">Loading editor...</div>
+});
 import { Users, Send, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import adminApiService from '@/utils/adminApiService';
 import emailService from '@/utils/emailService';

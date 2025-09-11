@@ -3,7 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import adminApiService from '@/utils/adminApiService';
 import emailService, { EmailSchedulerStatus } from '@/utils/emailService';
-import JoditEditor from 'jodit-react';
+import dynamic from 'next/dynamic';
+
+const JoditEditor = dynamic(() => import('jodit-react'), { 
+  ssr: false,
+  loading: () => <div className="h-96 bg-gray-700 rounded-md flex items-center justify-center text-gray-400">Loading editor...</div>
+});
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
