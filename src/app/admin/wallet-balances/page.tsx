@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Wallet, Coins, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+import { RefreshCw, Wallet, Coins, TrendingUp, Calendar, AlertCircle, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import adminApiService, { 
@@ -20,6 +20,7 @@ export default function WalletBalancesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState('today');
+  const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
   // Fetch wallet balances for today
   const fetchTodayBalances = async () => {
@@ -112,6 +113,35 @@ export default function WalletBalancesPage() {
     } else {
       fetchDateBalances(date);
     }
+  };
+
+  // Copy to clipboard functions
+  const copyToClipboard = async (text: string, itemId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedItems(prev => new Set([...prev, itemId]));
+      toast.success('Copied to clipboard!');
+      
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(itemId);
+          return newSet;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
+  const copyWalletAddress = (address: string) => {
+    copyToClipboard(address, `wallet-${address}`);
+  };
+
+  const copyTokenAddress = (token: string) => {
+    copyToClipboard(token, `token-${token}`);
   };
 
   // Format SOL balance
@@ -285,10 +315,23 @@ export default function WalletBalancesPage() {
                             <div className="p-2 bg-blue-600 rounded-lg">
                               <Wallet className="h-5 w-5 text-white" />
                             </div>
-                            <div>
-                              <span className="font-mono text-lg font-semibold text-white">
-                                {formatWalletAddress(wallet?.walletAddress)}
-                              </span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-lg font-semibold text-white">
+                                  {formatWalletAddress(wallet?.walletAddress)}
+                                </span>
+                                <button
+                                  onClick={() => copyWalletAddress(wallet?.walletAddress)}
+                                  className="p-1.5 hover:bg-gray-600 rounded-lg transition-colors group"
+                                  title="Copy wallet address"
+                                >
+                                  {copiedItems.has(`wallet-${wallet?.walletAddress}`) ? (
+                                    <Check className="h-4 w-4 text-green-400" />
+                                  ) : (
+                                    <Copy className="h-4 w-4 text-gray-400 group-hover:text-white" />
+                                  )}
+                                </button>
+                              </div>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                   wallet?.hasAnyBalance 
@@ -346,7 +389,22 @@ export default function WalletBalancesPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {wallet?.tokenBalances?.map((token, index) => (
                                 <div key={index} className="flex justify-between items-center p-4 bg-gray-600/30 rounded-lg border border-gray-500/30">
-                                  <span className="font-medium text-white">{token.token}</span>
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <span className="font-medium text-white font-mono text-sm">
+                                      {token.mint.length > 20 ? `${token.mint.slice(0, 8)}...${token.mint.slice(-8)}` : token.mint}
+                                    </span>
+                                    <button
+                                      onClick={() => copyTokenAddress(token.mint)}
+                                      className="p-1 hover:bg-gray-500 rounded transition-colors group"
+                                      title="Copy token address"
+                                    >
+                                      {copiedItems.has(`token-${token.mint}`) ? (
+                                        <Check className="h-3 w-3 text-green-400" />
+                                      ) : (
+                                        <Copy className="h-3 w-3 text-gray-400 group-hover:text-white" />
+                                      )}
+                                    </button>
+                                  </div>
                                   <span className="text-sm font-mono text-gray-300">
                                     {token.balance.toFixed(6)}
                                   </span>
@@ -422,10 +480,23 @@ export default function WalletBalancesPage() {
                             <div className="p-2 bg-blue-600 rounded-lg">
                               <Wallet className="h-5 w-5 text-white" />
                             </div>
-                            <div>
-                              <span className="font-mono text-lg font-semibold text-white">
-                                {formatWalletAddress(wallet?.walletAddress)}
-                              </span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-lg font-semibold text-white">
+                                  {formatWalletAddress(wallet?.walletAddress)}
+                                </span>
+                                <button
+                                  onClick={() => copyWalletAddress(wallet?.walletAddress)}
+                                  className="p-1.5 hover:bg-gray-600 rounded-lg transition-colors group"
+                                  title="Copy wallet address"
+                                >
+                                  {copiedItems.has(`wallet-${wallet?.walletAddress}`) ? (
+                                    <Check className="h-4 w-4 text-green-400" />
+                                  ) : (
+                                    <Copy className="h-4 w-4 text-gray-400 group-hover:text-white" />
+                                  )}
+                                </button>
+                              </div>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                   wallet?.hasAnyBalance 
@@ -483,7 +554,22 @@ export default function WalletBalancesPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {wallet?.tokenBalances?.map((token, index) => (
                                 <div key={index} className="flex justify-between items-center p-4 bg-gray-600/30 rounded-lg border border-gray-500/30">
-                                  <span className="font-medium text-white">{token.token}</span>
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <span className="font-medium text-white font-mono text-sm">
+                                      {token.mint.length > 20 ? `${token.mint.slice(0, 8)}...${token.mint.slice(-8)}` : token.mint}
+                                    </span>
+                                    <button
+                                      onClick={() => copyTokenAddress(token.mint)}
+                                      className="p-1 hover:bg-gray-500 rounded transition-colors group"
+                                      title="Copy token address"
+                                    >
+                                      {copiedItems.has(`token-${token.mint}`) ? (
+                                        <Check className="h-3 w-3 text-green-400" />
+                                      ) : (
+                                        <Copy className="h-3 w-3 text-gray-400 group-hover:text-white" />
+                                      )}
+                                    </button>
+                                  </div>
                                   <span className="text-sm font-mono text-gray-300">
                                     {token.balance.toFixed(6)}
                                   </span>
