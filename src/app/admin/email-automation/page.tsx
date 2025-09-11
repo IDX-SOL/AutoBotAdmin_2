@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import adminApiService from '@/utils/adminApiService';
+import emailService, { EmailSchedulerStatus } from '@/utils/emailService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,12 @@ import {
   Users, 
   Bot,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Send,
+  Settings,
+  FileText,
+  Calendar
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 
@@ -30,14 +36,7 @@ interface EmailStats {
   typeBreakdown: Record<string, number>;
   openRate?: number;
   clickRate?: number;
-  schedulerStatus: {
-    isRunning: boolean;
-    jobs: Array<{
-      name: string;
-      running: boolean;
-      scheduled: boolean;
-    }>;
-  };
+  schedulerStatus: EmailSchedulerStatus;
 }
 
 
@@ -46,43 +45,54 @@ const EmailAutomationPage = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [emailHistory, setEmailHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Fetch email automation statistics
   const fetchStats = useCallback(async () => {
     try {
-      const response = await adminApiService.getEmailStats();
-      const data = response.data as { success: boolean; stats?: { totalSent?: number; totalOpened?: number; totalClicked?: number; openRate?: number; clickRate?: number; }; message?: string };
+      const [statsResponse, statusResponse] = await Promise.all([
+        adminApiService.getEmailStats(),
+        emailService.getEmailSchedulerStatus()
+      ]);
       
-      if (data.success && data.stats) {
+      const statsData = statsResponse.data as { success: boolean; stats?: { totalSent?: number; totalOpened?: number; totalClicked?: number; openRate?: number; clickRate?: number; }; message?: string };
+      
+      if (statsData.success && statsData.stats) {
         // Transform the response to match EmailStats interface
         const emailStats: EmailStats = {
-          totalEmails: data.stats.totalSent || 0,
+          totalEmails: statsData.stats.totalSent || 0,
           last24Hours: 0, // Not available in current backend
           last7Days: 0, // Not available in current backend
           last30Days: 0, // Not available in current backend
           statusBreakdown: {
-            sent: data.stats.totalSent || 0,
-            opened: data.stats.totalOpened || 0,
-            clicked: data.stats.totalClicked || 0,
+            sent: statsData.stats.totalSent || 0,
+            opened: statsData.stats.totalOpened || 0,
+            clicked: statsData.stats.totalClicked || 0,
             failed: 0 // Not available in current backend
           },
           typeBreakdown: {
             individual: 0, // Not available in current backend
             bulk: 0, // Not available in current backend
-            all: data.stats.totalSent || 0
+            all: statsData.stats.totalSent || 0
           },
-          openRate: data.stats.openRate || 0,
-          clickRate: data.stats.clickRate || 0,
-          schedulerStatus: {
-            isRunning: false, // Not available in current backend
-            jobs: [] // Not available in current backend
+          openRate: statsData.stats.openRate || 0,
+          clickRate: statsData.stats.clickRate || 0,
+          schedulerStatus: statusResponse || {
+            emailServiceReady: false,
+            schedulerRunning: false,
+            lastRun: null,
+            nextRun: null,
+            activeJobs: []
           }
         };
         setStats(emailStats);
       } else {
-        console.warn('API returned error:', data.message);
+        console.warn('API returned error:', statsData.message);
         setStats(null);
-        showNotification('error', data.message || 'Failed to fetch email statistics');
+        showNotification('error', statsData.message || 'Failed to fetch email statistics');
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -105,17 +115,17 @@ const EmailAutomationPage = () => {
     try {
       let response;
       if (action === 'start') {
-        response = await adminApiService.startEmailScheduler();
+        response = await emailService.startEmailScheduler();
       } else {
-        response = await adminApiService.stopEmailScheduler();
+        response = await emailService.stopEmailScheduler();
       }
       
-      if (response.data.success) {
-        showNotification('success', response.data.message);
+      if (response.success) {
+        showNotification('success', response.message);
         // Refresh stats after scheduler action
         fetchStats();
       } else {
-        showNotification('error', response.data.message || `Failed to ${action} scheduler`);
+        showNotification('error', response.message || `Failed to ${action} scheduler`);
       }
     } catch (error) {
       console.error(`Error ${action}ing scheduler:`, error);
@@ -129,14 +139,14 @@ const EmailAutomationPage = () => {
   const runJob = async (jobName: string) => {
     setActionLoading(jobName);
     try {
-      const response = await adminApiService.runEmailJob(jobName);
+      const response = await emailService.runEmailJob(jobName);
       
-      if (response.data.success) {
-        showNotification('success', response.data.message);
+      if (response.success) {
+        showNotification('success', response.message);
         // Refresh stats after job execution
         fetchStats();
       } else {
-        showNotification('error', response.data.message || `Failed to run job: ${jobName}`);
+        showNotification('error', response.message || `Failed to run job: ${jobName}`);
       }
     } catch (error) {
       console.error(`Error running job ${jobName}:`, error);
@@ -174,18 +184,87 @@ const EmailAutomationPage = () => {
   const runAllAutomations = async () => {
     setActionLoading('all');
     try {
-      const response = await adminApiService.runAllEmailAutomations();
+      const response = await emailService.runAllEmailAutomations();
       
-      if (response.data.success) {
-        showNotification('success', response.data.message);
+      if (response.success) {
+        showNotification('success', response.message);
         // Refresh stats after running all automations
         fetchStats();
       } else {
-        showNotification('error', response.data.message || 'Failed to run all automations');
+        showNotification('error', response.message || 'Failed to run all automations');
       }
     } catch (error) {
       console.error('Error running all automations:', error);
       showNotification('error', 'Failed to run all automations');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Fetch email history
+  const fetchEmailHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const response = await emailService.getEmailHistory(1, 50);
+      if (response.success) {
+        setEmailHistory(response.emails);
+      } else {
+        showNotification('error', 'Failed to fetch email history');
+      }
+    } catch (error) {
+      console.error('Error fetching email history:', error);
+      showNotification('error', 'Failed to fetch email history');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  // View email content
+  const viewEmailContent = async (emailId: number) => {
+    try {
+      const email = await emailService.getEmailLogDetails(emailId);
+      if (email) {
+        setSelectedEmail(email);
+        setShowEmailModal(true);
+      } else {
+        showNotification('error', 'Failed to load email details');
+      }
+    } catch (error) {
+      console.error('Error fetching email details:', error);
+      showNotification('error', 'Failed to load email details');
+    }
+  };
+
+  // Resend email
+  const resendEmail = async (emailId: number) => {
+    try {
+      const response = await emailService.resendEmail(emailId);
+      if (response.success) {
+        showNotification('success', response.message);
+        fetchEmailHistory();
+      } else {
+        showNotification('error', response.message);
+      }
+    } catch (error) {
+      console.error('Error resending email:', error);
+      showNotification('error', 'Failed to resend email');
+    }
+  };
+
+  // Initialize templates
+  const initializeTemplates = async () => {
+    setActionLoading('init-templates');
+    try {
+      const response = await emailService.initializeEmailTemplates();
+      if (response.success) {
+        showNotification('success', response.message);
+        fetchStats();
+      } else {
+        showNotification('error', response.message);
+      }
+    } catch (error) {
+      console.error('Error initializing templates:', error);
+      showNotification('error', 'Failed to initialize templates');
     } finally {
       setActionLoading(null);
     }
@@ -224,13 +303,12 @@ const EmailAutomationPage = () => {
   }
 
   const jobSchedules = {
-    'bot-reminder': 'Every 6 hours',
-    'recharge-reminder': 'Every 4 hours',
-    'gas-fees-zero': 'Every 2 hours',
-    'followup-3day': 'Daily at 10 AM',
-    'followup-7day': 'Daily at 11 AM',
-    'upgrade-promotion': 'Daily at 2 PM',
-    'comprehensive-automation': 'Daily at 9 PM'
+    'welcome-emails': 'Every 5 minutes',
+    'follow-up-emails': 'Daily at 10 AM IST',
+    'recharge-reminders': 'Daily at 2 PM IST',
+    'bot-stopped-emails': 'Every 30 minutes',
+    'success-stories': 'Weekly on Monday at 9 AM IST',
+    'nitro-promotion': 'Every 3 days at 11 AM IST'
   };
 
   return (
@@ -245,7 +323,7 @@ const EmailAutomationPage = () => {
           <div className="flex gap-3">
             <button
               onClick={() => handleSchedulerAction('start')}
-              disabled={actionLoading === 'start' || stats?.schedulerStatus.isRunning}
+              disabled={actionLoading === 'start' || stats?.schedulerStatus.schedulerRunning}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 rounded-lg text-white font-medium transition-colors"
             >
               {actionLoading === 'start' ? (
@@ -257,7 +335,7 @@ const EmailAutomationPage = () => {
             </button>
             <button
               onClick={() => handleSchedulerAction('stop')}
-              disabled={actionLoading === 'stop' || !stats?.schedulerStatus.isRunning}
+              disabled={actionLoading === 'stop' || !stats?.schedulerStatus.schedulerRunning}
               className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 rounded-lg text-white font-medium transition-colors"
             >
               {actionLoading === 'stop' ? (
@@ -266,6 +344,18 @@ const EmailAutomationPage = () => {
                 <Pause className="h-4 w-4" />
               )}
               <span>Stop Scheduler</span>
+            </button>
+            <button
+              onClick={initializeTemplates}
+              disabled={actionLoading === 'init-templates'}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 rounded-lg text-white font-medium transition-colors"
+            >
+              {actionLoading === 'init-templates' ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Settings className="h-4 w-4" />
+              )}
+              <span>Init Templates</span>
             </button>
           </div>
         </div>
@@ -290,6 +380,8 @@ const EmailAutomationPage = () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="jobs">Scheduled Jobs</TabsTrigger>
+          <TabsTrigger value="history">Email History</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="stats">Statistics</TabsTrigger>
           <TabsTrigger value="actions">Manual Actions</TabsTrigger>
         </TabsList>
@@ -406,38 +498,44 @@ const EmailAutomationPage = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {stats?.schedulerStatus.jobs.map((job) => (
-                  <div key={job.name} className="flex items-center justify-between p-4 border rounded-lg">
+                {stats?.schedulerStatus.activeJobs.map((jobName) => (
+                  <div key={jobName} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-3">
-                      {job.name.includes('bot') ? (
-                        <Bot className="h-5 w-5 text-blue-500" />
-                      ) : job.name.includes('followup') ? (
-                        <Users className="h-5 w-5 text-green-500" />
-                      ) : job.name.includes('upgrade') ? (
-                        <TrendingUp className="h-5 w-5 text-purple-500" />
+                      {jobName.includes('welcome') ? (
+                        <Mail className="h-5 w-5 text-green-500" />
+                      ) : jobName.includes('follow-up') ? (
+                        <Users className="h-5 w-5 text-blue-500" />
+                      ) : jobName.includes('recharge') ? (
+                        <TrendingUp className="h-5 w-5 text-orange-500" />
+                      ) : jobName.includes('bot-stopped') ? (
+                        <Bot className="h-5 w-5 text-red-500" />
+                      ) : jobName.includes('success') ? (
+                        <CheckCircle className="h-5 w-5 text-purple-500" />
+                      ) : jobName.includes('nitro') ? (
+                        <TrendingUp className="h-5 w-5 text-yellow-500" />
                       ) : (
                         <Mail className="h-5 w-5 text-gray-500" />
                       )}
                       <div>
                         <h3 className="font-medium capitalize">
-                          {job.name.replace(/-/g, ' ')}
+                          {jobName.replace(/-/g, ' ')}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {jobSchedules[job.name as keyof typeof jobSchedules] || 'Custom schedule'}
+                          {jobSchedules[jobName as keyof typeof jobSchedules] || 'Custom schedule'}
                         </p>
                       </div>
                     </div>
-                                          <div className="flex items-center space-x-2">
-                        <Badge variant={job.running ? 'default' : 'secondary'}>
-                          {job.running ? 'Running' : 'Stopped'}
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => runJob(job.name)}
-                          disabled={actionLoading === job.name}
-                        >
-                        {actionLoading === job.name ? (
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={stats?.schedulerStatus.schedulerRunning ? 'default' : 'secondary'}>
+                        {stats?.schedulerStatus.schedulerRunning ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => runJob(jobName)}
+                        disabled={actionLoading === jobName}
+                      >
+                        {actionLoading === jobName ? (
                           <RefreshCw className="h-4 w-4 animate-spin" />
                         ) : (
                           <Play className="h-4 w-4" />
@@ -446,6 +544,102 @@ const EmailAutomationPage = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email History</CardTitle>
+              <CardDescription>View sent emails and their status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Button onClick={fetchEmailHistory} disabled={historyLoading}>
+                    {historyLoading ? (
+                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Refresh History
+                  </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  {emailHistory.map((email) => (
+                    <div key={email.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          email.status === 'sent' ? 'bg-green-500' :
+                          email.status === 'delivered' ? 'bg-blue-500' :
+                          email.status === 'opened' ? 'bg-purple-500' :
+                          email.status === 'clicked' ? 'bg-yellow-500' :
+                          email.status === 'failed' ? 'bg-red-500' :
+                          'bg-gray-500'
+                        }`}></div>
+                        <div>
+                          <h4 className="font-medium">{email.subject}</h4>
+                          <p className="text-sm text-gray-500">
+                            To: {email.user?.email || 'Unknown'} | 
+                            Type: {email.type} | 
+                            Status: {email.status} |
+                            Sent: {new Date(email.sentAt || email.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => viewEmailContent(email.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {email.status === 'failed' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resendEmail(email.id)}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Templates</CardTitle>
+              <CardDescription>Manage email templates for automated campaigns</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Button onClick={initializeTemplates} disabled={actionLoading === 'init-templates'}>
+                    {actionLoading === 'init-templates' ? (
+                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Settings className="h-4 w-4 mr-2" />
+                    )}
+                    Initialize Templates
+                  </Button>
+                </div>
+                
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4" />
+                  <p>Email templates will be loaded here once initialized.</p>
+                  <p className="text-sm">Click "Initialize Templates" to create the default email templates.</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -515,6 +709,85 @@ const EmailAutomationPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Email Content Modal */}
+      {showEmailModal && selectedEmail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold">Email Details</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEmailModal(false)}
+              >
+                ×
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="font-medium">Subject:</label>
+                <p className="text-gray-700">{selectedEmail.subject}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium">To:</label>
+                <p className="text-gray-700">{selectedEmail.user?.email || 'Unknown'}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium">Status:</label>
+                <Badge variant={selectedEmail.status === 'sent' ? 'default' : 'secondary'}>
+                  {selectedEmail.status}
+                </Badge>
+              </div>
+              
+              <div>
+                <label className="font-medium">Type:</label>
+                <p className="text-gray-700">{selectedEmail.type}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium">Sent At:</label>
+                <p className="text-gray-700">{new Date(selectedEmail.sentAt || selectedEmail.createdAt).toLocaleString()}</p>
+              </div>
+              
+              {selectedEmail.error && (
+                <div>
+                  <label className="font-medium text-red-600">Error:</label>
+                  <p className="text-red-600 text-sm">{selectedEmail.error}</p>
+                </div>
+              )}
+              
+              <div>
+                <label className="font-medium">Content:</label>
+                <div 
+                  className="border rounded p-4 bg-gray-50 max-h-96 overflow-y-auto"
+                  dangerouslySetInnerHTML={{ __html: selectedEmail.content }}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              {selectedEmail.status === 'failed' && (
+                <Button
+                  onClick={() => {
+                    resendEmail(selectedEmail.id);
+                    setShowEmailModal(false);
+                  }}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Resend Email
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setShowEmailModal(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </AdminLayout>
   );
