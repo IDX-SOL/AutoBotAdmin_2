@@ -1,0 +1,295 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import AdminLayout from '../../../../../components/admin/AdminLayout';
+import adminApiService, { LogEntry, BotLogsResponse } from '../../../../../utils/adminApiService';
+
+export default function BotLogsPage() {
+  const params = useParams();
+  const botId = params.botId as string;
+  
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [logType, setLogType] = useState('all');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await adminApiService.getBotLogs(botId, {
+        type: logType,
+        limit: 200,
+        ...(selectedDate && { date: selectedDate })
+      });
+      
+      const data: BotLogsResponse = response.data;
+      
+      if (data.success) {
+        setLogs(data.data.logs);
+        setAvailableDates(data.data.availableDates);
+        setSummary(data.data.summary);
+        setError(null);
+      } else {
+        throw new Error('Failed to fetch logs');
+      }
+    } catch (err) {
+      console.error('Error fetching logs:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch logs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, [botId, logType, selectedDate]);
+
+  // Auto refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(fetchLogs, 5000); // Refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, [autoRefresh, botId, logType, selectedDate]);
+
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case 'ERROR': return 'text-red-400 bg-red-500/20 border-red-500/30';
+      case 'WARNING': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
+      case 'INFO': return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
+      case 'LOG': return 'text-indigo-400 bg-indigo-500/20 border-indigo-500/30';
+      case 'TRADE': return 'text-green-400 bg-green-500/20 border-green-500/30';
+      case 'WALLET': return 'text-purple-400 bg-purple-500/20 border-purple-500/30';
+      case 'DEBUG': return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
+      default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
+    }
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const clearLogs = async () => {
+    if (!confirm('Are you sure you want to clear all logs for this bot?')) return;
+    
+    try {
+      await adminApiService.clearBotLogs(botId);
+      fetchLogs(); // Refresh the logs
+    } catch (err) {
+      console.error('Error clearing logs:', err);
+      setError(err instanceof Error ? err.message : 'Failed to clear logs');
+    }
+  };
+
+  if (loading && logs.length === 0) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Bot Logs</h1>
+            <p className="text-gray-400 mt-1">Bot ID: {botId}</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className={`px-4 py-2 rounded-md text-sm font-medium ${
+                autoRefresh 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
+            </button>
+            <button
+              onClick={fetchLogs}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+            >
+              Refresh
+            </button>
+            <button
+              onClick={clearLogs}
+              className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+            >
+              Clear Logs
+            </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className="flex items-center space-x-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Log Type</label>
+              <select
+                value={logType}
+                onChange={(e) => setLogType(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Logs</option>
+                <option value="info">Info</option>
+                <option value="log">General Logs</option>
+                <option value="error">Error</option>
+                <option value="trade">Trade</option>
+                <option value="warning">Warning</option>
+                <option value="debug">Debug</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Dates</option>
+                {availableDates.map(date => (
+                  <option key={date} value={date}>{date}</option>
+                ))}
+              </select>
+            </div>
+            {summary && (
+              <div className="flex items-center space-x-4 text-sm text-gray-400">
+                <span>Total: {summary.total}</span>
+                {Object.entries(summary.byLevel).map(([level, count]) => (
+                  <span key={level} className="capitalize">
+                    {level}: {count as number}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-400">Error</h3>
+                <div className="mt-2 text-sm text-red-300">{error}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Logs List */}
+        <div className="bg-gray-800 rounded-xl border border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h2 className="text-lg font-medium text-white">
+              Logs ({logs.length})
+            </h2>
+          </div>
+          
+          <div className="divide-y divide-gray-700 max-h-96 overflow-y-auto">
+            {logs.length === 0 ? (
+              <div className="px-6 py-8 text-center text-gray-400">
+                No logs found for the selected criteria.
+              </div>
+            ) : (
+              logs.map((log) => (
+                <div key={log.id} className="px-6 py-4 hover:bg-gray-700/50">
+                  <div className="flex items-start space-x-4">
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getLevelColor(log.level)}`}>
+                      {log.level}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-white font-medium">
+                          {typeof log.message === 'string' ? log.message : JSON.stringify(log.message)}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {formatTimestamp(log.timestamp)}
+                        </p>
+                      </div>
+                      
+                      {/* Metadata */}
+                      {log.metadata && typeof log.metadata === 'object' && Object.keys(log.metadata).length > 0 && (
+                        <div className="mt-2">
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-gray-400 hover:text-white">
+                              Metadata
+                            </summary>
+                            <pre className="mt-1 p-2 bg-gray-700 rounded text-xs overflow-x-auto text-gray-300">
+                              {JSON.stringify(log.metadata, null, 2)}
+                            </pre>
+                          </details>
+                        </div>
+                      )}
+                      
+                      {/* Error Details */}
+                      {log.error && typeof log.error === 'object' && (
+                        <div className="mt-2">
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-red-400 hover:text-red-300">
+                              Error Details
+                            </summary>
+                            <pre className="mt-1 p-2 bg-red-500/10 rounded text-xs overflow-x-auto text-red-200">
+                              {JSON.stringify(log.error, null, 2)}
+                            </pre>
+                          </details>
+                        </div>
+                      )}
+                      
+                      {/* Trade Data */}
+                      {log.tradeData && typeof log.tradeData === 'object' && (
+                        <div className="mt-2">
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-green-400 hover:text-green-300">
+                              Trade Data
+                            </summary>
+                            <pre className="mt-1 p-2 bg-green-500/10 rounded text-xs overflow-x-auto text-green-200">
+                              {JSON.stringify(log.tradeData, null, 2)}
+                            </pre>
+                          </details>
+                        </div>
+                      )}
+                      
+                      {/* Wallet Data */}
+                      {log.walletData && typeof log.walletData === 'object' && (
+                        <div className="mt-2">
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-purple-400 hover:text-purple-300">
+                              Wallet Data
+                            </summary>
+                            <pre className="mt-1 p-2 bg-purple-500/10 rounded text-xs overflow-x-auto text-purple-200">
+                              {JSON.stringify(log.walletData, null, 2)}
+                            </pre>
+                          </details>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}

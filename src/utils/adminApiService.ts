@@ -91,6 +91,37 @@ export interface AdminsResponse {
   admins: AdminUser[];
 }
 
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  level: string;
+  botId: number;
+  message: string;
+  metadata: any;
+  error?: any;
+  tradeData?: any;
+  walletData?: any;
+}
+
+export interface BotLogsResponse {
+  success: boolean;
+  data: {
+    logs: LogEntry[];
+    total: number;
+    botId: number;
+    logType: string;
+    availableDates: string[];
+    summary: {
+      total: number;
+      byLevel: Record<string, number>;
+      dateRange: {
+        earliest: string;
+        latest: string;
+      } | null;
+    };
+  };
+}
+
 // Create admin axios instance with different configuration
 const adminAxiosInstance: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://apiautobot.idxsolana.io',
@@ -179,6 +210,12 @@ const adminApiService = {
     adminAxiosInstance.get(`/admin/bots/${botId}/trade-wallets`),
   restoreBot: (botId: string): Promise<AxiosResponse<Bot>> => 
     adminAxiosInstance.post(`/admin/bots/${botId}/restore`),
+  
+  // Bot logs management
+  getBotLogs: (botId: string, params?: { type?: string; limit?: number; date?: string }): Promise<AxiosResponse<BotLogsResponse>> => 
+    adminAxiosInstance.get(`/admin/bots/${botId}/logs`, { params }),
+  clearBotLogs: (botId: string): Promise<AxiosResponse<void>> => 
+    adminAxiosInstance.delete(`/admin/bots/${botId}/logs`),
   
   // Analytics and reports
   getAnalytics: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<string>> => 
