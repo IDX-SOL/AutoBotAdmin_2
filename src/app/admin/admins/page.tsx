@@ -8,7 +8,6 @@ import {
   Eye, 
   Edit, 
   Trash2,
-  Plus,
   User,
   Calendar,
   Crown,
@@ -19,7 +18,7 @@ import {
 export default function AdminAdmins() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentPage] = useState(1);
 //   const [totalPages] = useState(1);
 //   const [pagination] = useState({});
@@ -111,10 +110,10 @@ export default function AdminAdmins() {
     </div>
   );
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // Handle form submission
-  };
+  // const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   // Handle form submission
+  // };
 
   if (loading) {
     return (
@@ -135,13 +134,13 @@ export default function AdminAdmins() {
             <h1 className="text-3xl font-bold text-white">Admin Management</h1>
             <p className="text-gray-400 mt-2">Manage admin accounts and permissions</p>
           </div>
-          <button
+          {/* <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <Plus className="h-5 w-5" />
             <span>Add Admin</span>
-          </button>
+          </button> */}
         </div>
 
         {/* Stats */}

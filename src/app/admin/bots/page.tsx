@@ -5,21 +5,20 @@ import AdminLayout from "../../../components/admin/AdminLayout";
 import adminApiService, { Bot } from "../../../utils/adminApiService";
 import {
   Bot as BotIcon,
-  Play,
   Activity,
   Calendar,
-  User,
-  AlertCircle,
-  CheckCircle,
-  StopCircle,
   Copy,
   Check,
   ExternalLink,
   Wallet,
   Trash2,
+  Smartphone,
+  Monitor,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
-// import { useToast } from '@/components/Toast/ToastContext';
+import { useToast } from '@/components/Toast/ToastContext';
 
 export default function AdminBots() {
   const [bots, setBots] = useState<Bot[]>([]);
@@ -39,7 +38,7 @@ export default function AdminBots() {
     total: 0,
     totalPages: 1
   });
-  // const { showSuccess } = useToast();
+  const { showSuccess, showError } = useToast();
 
   const fetchBots = useCallback(async () => {
     try {
@@ -112,48 +111,76 @@ export default function AdminBots() {
   useEffect(() => {
     fetchBots();
   }, [fetchBots]);
+ const handleDelete = async (id: string, botName?: string) => {
+  // Show confirmation dialog
+  const confirmed = window.confirm(
+    `Are you sure you want to delete the bot "${botName || 'this bot'}"? This action cannot be undone.`
+  );
+  
+  if (!confirmed) {
+    return;
+  }
 
-  const getStatusColor = (status: string | undefined) => {
-    if (!status) return "bg-gray-500/20 text-gray-400";
+  try {
+    console.log("Deleting bot:", id);
+    const res = await adminApiService.deleteBot(id);
+    console.log("Bot deleted:", res);
+    
+    // Show success notification
+    showSuccess("Bot deleted successfully!");
+    
+    // Refresh the bots list
+    await fetchBots();
+  } catch (err) {
+    console.error("Error deleting bot:", err);
+    
+    // Show error notification
+    const errorMessage = err instanceof Error ? err.message : "Failed to delete bot";
+    showError(`Error: ${errorMessage}`);
+  }
+ };
 
-    switch (status) {
-      case "running":
-        return "bg-green-500/20 text-green-400";
-      case "warning":
-        return "bg-yellow-500/20 text-yellow-400";
-      case "stopped":
-        return "bg-red-500/20 text-red-400";
-      case "error":
-        return "bg-red-500/20 text-red-400";
-      case "refunding":
-        return "bg-orange-500/20 text-orange-400";
-      case "refunded":
-        return "bg-blue-500/20 text-blue-400";
-      default:
-        return "bg-gray-500/20 text-gray-400";
-    }
-  };
+  // const getStatusColor = (status: string | undefined) => {
+  //   if (!status) return "bg-gray-500/20 text-gray-400";
 
-  const getStatusIcon = (status: string | undefined) => {
-    if (!status) return <BotIcon className="h-4 w-4" />;
+  //   switch (status) {
+  //     case "running":
+  //       return "bg-green-500/20 text-green-400";
+  //     case "warning":
+  //       return "bg-yellow-500/20 text-yellow-400";
+  //     case "stopped":
+  //       return "bg-red-500/20 text-red-400";
+  //     case "error":
+  //       return "bg-red-500/20 text-red-400";
+  //     case "refunding":
+  //       return "bg-orange-500/20 text-orange-400";
+  //     case "refunded":
+  //       return "bg-blue-500/20 text-blue-400";
+  //     default:
+  //       return "bg-gray-500/20 text-gray-400";
+  //   }
+  // };
 
-    switch (status) {
-      case "running":
-        return <Play className="h-4 w-4" />;
-      case "warning":
-        return <AlertCircle className="h-4 w-4" />;
-      case "stopped":
-        return <StopCircle className="h-4 w-4" />;
-      case "error":
-        return <AlertCircle className="h-4 w-4" />;
-      case "refunding":
-        return <Activity className="h-4 w-4" />;
-      case "refunded":
-        return <CheckCircle className="h-4 w-4" />;
-      default:
-        return <BotIcon className="h-4 w-4" />;
-    }
-  };
+  // const getStatusIcon = (status: string | undefined) => {
+  //   if (!status) return <BotIcon className="h-4 w-4" />;
+
+  //   switch (status) {
+  //       case "running":
+  //         return <Play className="h-4 w-4" />;
+  //       case "warning":
+  //         return <AlertCircle className="h-4 w-4" />;
+  //       case "stopped":
+  //         return <StopCircle className="h-4 w-4" />;
+  //       case "error":
+  //         return <AlertCircle className="h-4 w-4" />;
+  //       case "refunding":
+  //         return <Activity className="h-4 w-4" />;
+  //       case "refunded":
+  //         return <CheckCircle className="h-4 w-4" />;
+  //       default:
+  //         return <BotIcon className="h-4 w-4" />;
+  //     }
+  // };
 
   const BotCardAdmin = ({ bot }: { bot: Bot }) => {
     const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -161,7 +188,7 @@ export default function AdminBots() {
 
     if (!bot) return null;
 
-    console.log("Rendering bot card:", bot);
+    // console.log("Rendering bot card:", bot);
 
     const handleCopy = (text: string, field: string) => {
       navigator.clipboard.writeText(text);
@@ -172,9 +199,11 @@ export default function AdminBots() {
     const getStatusBadge = (status: string | undefined) => {
       const statusConfig: Record<string, { color: string; icon: string }> = {
         running: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: '▶' },
-        stopped: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '⏹' },
+        stopped: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: '⏹' },
         paused: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: '⏸' },
-        error: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' }
+        error: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' },
+        refunded: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' },
+        refunding: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: '' }
       };
       
       const config = statusConfig[status || 'stopped'] || statusConfig.stopped;
@@ -205,6 +234,25 @@ export default function AdminBots() {
               <p className="text-xs text-gray-400 truncate max-w-40">
                 {bot.user?.email || 'No description'}
               </p>
+              {(bot.user?.platform || bot.user?.device) && (
+                <div className="flex items-center gap-2 mt-1">
+                  {bot.user?.platform && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      {bot.user.platform === 'mobile' ? (
+                        <Smartphone className="h-3 w-3" />
+                      ) : (
+                        <Monitor className="h-3 w-3" />
+                      )}
+                      {bot.user.platform}
+                    </span>
+                  )}
+                  {bot.user?.device && (
+                    <span className="text-xs text-gray-500">
+                      {bot.user.device}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
@@ -220,11 +268,14 @@ export default function AdminBots() {
                 {bot?.tokenSymbol || "N/A"}
               </p>
             </div>
+           
+            
           </div>
         </div>
 
         {/* Compact Wallet Info */}
-        <div className="grid grid-cols-4 gap-2 mb-3">
+        <div className="grid xl:grid-cols-4 grid-cols-2 gap-2 mb-3">
+
           <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-xs text-gray-400 mb-1">User Wallet</p>
             <div className="flex items-center justify-center gap-1">
@@ -270,6 +321,32 @@ export default function AdminBots() {
               </button>
               <Link
                 href={`https://solscan.io/address/${bot.ownerWalletAddress}`}
+                target="_blank"
+                className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                title="View on Solscan"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+          <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-xs text-gray-400 mb-1">Bot Middle Wallet</p>
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-xs text-gray-300 font-mono">
+                {bot.middleWalletAddress ? `${bot.middleWalletAddress.slice(0, 4)}...${bot.middleWalletAddress.slice(-4)}` : 'N/A'}
+              </span>
+              <button
+                onClick={() => bot.middleWalletAddress && handleCopy(bot.middleWalletAddress, 'botWallet')}
+                className={`p-1 rounded transition-colors ${
+                  copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
+                }`}
+                title="Copy bot wallet"
+                disabled={!bot.middleWalletAddress}
+              >
+                {copiedField === 'botWallet' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              </button>
+              <Link
+                href={`https://solscan.io/address/${bot.middleWalletAddress}`}
                 target="_blank"
                 className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
                 title="View on Solscan"
@@ -356,7 +433,7 @@ export default function AdminBots() {
             )}
             {bot.deletedAt && (
               <span className="flex items-center gap-1 text-red-400">
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3 w-3 cursor-pointer" onClick={() => handleDelete(bot.id, bot.botName)} />
                  {new Date(bot.deletedAt).toLocaleString('en-IN', { 
                   timeZone: 'Asia/Kolkata',
                   dateStyle: 'short',
@@ -365,6 +442,44 @@ export default function AdminBots() {
               </span>
             )}
           </div>
+          {/* <div className="text-center">
+              <p className="text-gray-400">First Rechage</p>
+              <p className="text-white font-semibold truncate max-w-16">
+                {bot?.firstRechageDate?"Yes":"No"}
+              </p>
+            </div> */}
+            <div className="flex items-center gap-2">
+            <div
+            className={`inline-flex items-center gap-2 px-3 py-1.5 ${bot?.firstRechageDate?"bg-green-600 hover:bg-green-700 text-white":"bg-red-600 hover:bg-red-700 text-white"} text-xs font-medium rounded-md transition-colors ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            // onClick={() => setIsLoading(true)}
+          >
+            
+              <>
+                {bot?.firstRechageDate?<CheckCircle2 className="h-3 w-3" />:<X className="h-3 w-3" />}
+                <span>First Rechage</span>
+              </>
+          </div>
+          <Link
+            href={`/admin/bots/${bot.id}/trade-wallets`}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            onClick={() => setIsLoading(true)}
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                <span>Loading</span>
+              </>
+            ) : (
+              <>
+                <Wallet className="h-3 w-3" />
+                <span>Trade Wallets</span>
+              </>
+            )}
+          </Link></div>
           
           <div className="flex gap-2">
             <Link
@@ -538,3 +653,4 @@ export default function AdminBots() {
     </AdminLayout>
   );
 }
+

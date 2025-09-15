@@ -18,6 +18,12 @@ export interface User {
   status: string;
   createdAt: string;
   updatedAt: string;
+  // Additional properties for detailed user view
+  campaignName?: string;
+  totalBots?: number;
+  isActive?: boolean;
+  platform?: string;
+  device?: string;
 }
 
 export interface Bot {
@@ -32,6 +38,7 @@ export interface Bot {
   tokenSymbol?: string;
   userWallet?: string;
   ownerWalletAddress?: string;
+  middleWalletAddress?: string;
   tokenAddress?: string;
   gasFees?: number;
   deletedAt?: string;
@@ -39,9 +46,12 @@ export interface Bot {
     id?: string;
     username?: string;
     email?: string;
+    platform?: string;
+    device?: string;
   };
   // Optional fields that might not be returned by the backend
   lastTradeAt?: string;
+  firstRechageDate?: boolean;
 }
 
 export interface DashboardStats {
@@ -90,6 +100,103 @@ export interface BotsResponse {
 export interface AdminsResponse {
   admins: AdminUser[];
 }
+
+export interface WalletBalance {
+  id: number;
+  walletAddress: string;
+  solBalance: number;
+  solBalanceRaw: number;
+  hasSolBalance: boolean;
+  tokenBalances: Array<{
+    mint: string;
+    token: string;
+    balance: number;
+    balanceRaw: string;
+    decimals: number;
+    tokenAccount: string;
+  }>;
+  hasTokens: boolean;
+  totalTokenTypes: number;
+  hasAnyBalance: boolean;
+  checkTimestamp: string;
+  errorMessage?: string;
+}
+
+export interface WalletBalanceResponse {
+  success: boolean;
+  data: {
+    date: string;
+    totalWallets: number;
+    wallets: WalletBalance[];
+  };
+}
+
+export interface WalletBalanceSummary {
+  today: {
+    date: string;
+    totalWallets: number;
+    totalSolBalance: number;
+    totalTokenTypes: number;
+    walletsWithSol: number;
+    walletsWithTokens: number;
+  };
+  yesterday: {
+    date: string;
+    totalWallets: number;
+    totalSolBalance: number;
+    totalTokenTypes: number;
+    walletsWithSol: number;
+    walletsWithTokens: number;
+  };
+  changes: {
+    walletCountChange: number;
+    solBalanceChange: number;
+    tokenTypesChange: number;
+  };
+}
+
+export interface CronStatus {
+  running: boolean;
+  scheduled: boolean;
+  nextRun: string;
+  timezone: string;
+  schedule: string;
+}
+
+// Email-related interfaces
+export interface EmailStats {
+  totalSent: number;
+  totalOpened: number;
+  totalClicked: number;
+  openRate: number;
+  clickRate: number;
+}
+
+export interface EmailStatus {
+  emailServiceReady: boolean;
+  schedulerRunning: boolean;
+  lastRun: string | null;
+  nextRun: string | null;
+}
+
+export interface EmailSchedulerResponse {
+  success: boolean;
+  message: string;
+  timestamp: string;
+}
+
+export interface EmailJobResponse {
+  success: boolean;
+  message: string;
+  jobName?: string;
+  timestamp: string;
+}
+
+export interface WelcomeEmailResponse {
+  success: boolean;
+  message: string;
+  userId: number;
+  timestamp: string;
 
 export interface LogEntry {
   id: string;
@@ -228,6 +335,58 @@ const adminApiService = {
     adminAxiosInstance.get('/admin/system/status'),
   getLogs: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get('/admin/system/logs', { params }),
+  
+  // Campaigns management
+  getCampaignsList: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/campaigns/list'),
+  getCampaignsStats: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/campaigns/stats'),
+  
+  // Tokens management
+  getTokensList: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/tokens/list'),
+  getTokensStats: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin-dev/tokens/stats'),
+  
+  // Email Automation
+  getEmailStats: (): Promise<AxiosResponse<{ success: boolean; stats: EmailStats }>> => 
+    adminAxiosInstance.get('/admin/emails/stats'),
+  getEmailStatus: (): Promise<AxiosResponse<{ success: boolean; status: EmailStatus }>> => 
+    adminAxiosInstance.get('/admin/emails/status'),
+  startEmailScheduler: (): Promise<AxiosResponse<EmailSchedulerResponse>> => 
+    adminAxiosInstance.post('/admin/emails/start'),
+  stopEmailScheduler: (): Promise<AxiosResponse<EmailSchedulerResponse>> => 
+    adminAxiosInstance.post('/admin/emails/stop'),
+  runEmailJob: (jobName: string): Promise<AxiosResponse<EmailJobResponse>> => 
+    adminAxiosInstance.post('/admin/emails/run-job', { jobName }),
+  sendWelcomeEmail: (userId: number): Promise<AxiosResponse<WelcomeEmailResponse>> => 
+    adminAxiosInstance.post('/admin/emails/send-welcome', { userId }),
+  runAllEmailAutomations: (): Promise<AxiosResponse<EmailSchedulerResponse>> => 
+    adminAxiosInstance.post('/admin/emails/run-all'),
+  
+  // Email Monitoring
+  getEmailLogs: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/admin/emails/history', { params }),
+  getEmailLogDetails: (emailId: number): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get(`/admin/emails/history/${emailId}`),
+  resendEmail: (emailId: number): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.post(`/admin/emails/history/${emailId}/resend`),
+  
+  // Wallet Balance Management
+  getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> => 
+    adminAxiosInstance.get('/wallet-balance/today'),
+  getWalletBalancesByDate: (date: string, onlyWithBalance: boolean = true): Promise<AxiosResponse<WalletBalanceResponse>> => 
+    adminAxiosInstance.get(`/wallet-balance/date/${date}`, { params: { onlyWithBalance } }),
+  getWalletBalanceStats: (startDate: string, endDate: string): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/wallet-balance/stats', { params: { startDate, endDate } }),
+  getWalletBalanceSummary: (): Promise<AxiosResponse<WalletBalanceSummary>> => 
+    adminAxiosInstance.get('/wallet-balance/summary'),
+  getWalletBalanceRecent: (limit: number = 7): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.get('/wallet-balance/recent', { params: { limit } }),
+  triggerWalletBalanceCheck: (): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.post('/wallet-balance/check-now'),
+  getWalletBalanceCronStatus: (): Promise<AxiosResponse<CronStatus>> => 
+    adminAxiosInstance.get('/wallet-balance/cron-status'),
   
   // Utility methods
   isAuthenticated: (): boolean => {

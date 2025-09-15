@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { ArrowLeft, Wallet, Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import adminApiService from '../../../../../utils/adminApiService';
 
 export default function BotTradeWalletsPage() {
   const params = useParams();
-  const router = useRouter();
   const botId = params.botId;
   
   const [bot, setBot] = useState(null);
@@ -161,7 +160,14 @@ export default function BotTradeWalletsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tradeWallets.map((wallet, index) => (
+              {tradeWallets
+                .sort((a, b) => {
+                  // Sort by createdAt in descending order (most recent first)
+                  const dateA = new Date(a.createdAt || 0);
+                  const dateB = new Date(b.createdAt || 0);
+                  return dateB - dateA;
+                })
+                .map((wallet, index) => (
                 <div key={index} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-colors">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
@@ -185,7 +191,11 @@ export default function BotTradeWalletsPage() {
                       <div>
                         <p className="text-xs text-gray-400">Created</p>
                         <p className="text-sm text-white">
-                          {wallet.createdAt ? new Date(wallet.createdAt).toLocaleDateString() : 'Unknown'}
+                          {wallet.createdAt ? new Date(wallet.createdAt).toLocaleString('en-IN', { 
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                }) : 'Unknown'}
                         </p>
                       </div>
                     </div>
@@ -196,7 +206,11 @@ export default function BotTradeWalletsPage() {
                         <div>
                           <p className="text-xs text-gray-400">Closed</p>
                           <p className="text-sm text-white">
-                            {new Date(wallet.closedAt).toLocaleDateString()}
+                            {new Date(wallet.closedAt).toLocaleString('en-IN', { 
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                })}
                           </p>
                         </div>
                       </div>
