@@ -275,6 +275,7 @@ export default function AdminBots() {
 
         {/* Compact Wallet Info */}
         <div className="grid xl:grid-cols-4 grid-cols-2 gap-2 mb-3">
+
           <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-xs text-gray-400 mb-1">User Wallet</p>
             <div className="flex items-center justify-center gap-1">
@@ -381,6 +382,33 @@ export default function AdminBots() {
               </Link>
             </div>
           </div>
+          
+          <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-xs text-gray-400 mb-1">Bot Logs</p>
+            <div className="flex items-center justify-center gap-1">
+              <Link
+                href={`/admin/bots/${bot.id}/logs`}
+                className="p-1 text-gray-400 hover:text-green-400 hover:bg-gray-600/50 rounded transition-colors"
+                title="View Bot Logs"
+              >
+                <Activity className="h-3 w-3" />
+              </Link>
+              <Link
+                href={`/admin/bots/${bot.id}/logs?type=error`}
+                className="p-1 text-gray-400 hover:text-red-400 hover:bg-gray-600/50 rounded transition-colors"
+                title="View Error Logs"
+              >
+                <AlertCircle className="h-3 w-3" />
+              </Link>
+              <Link
+                href={`/admin/bots/${bot.id}/logs?type=trade`}
+                className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                title="View Trade Logs"
+              >
+                <CheckCircle className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Row - User Info & Action */}
@@ -452,6 +480,36 @@ export default function AdminBots() {
               </>
             )}
           </Link></div>
+          
+          <div className="flex gap-2">
+            <Link
+              href={`/admin/bots/${bot.id}/trade-wallets`}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors ${
+                isLoading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={() => setIsLoading(true)}
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                  <span>Loading</span>
+                </>
+              ) : (
+                <>
+                  <Wallet className="h-3 w-3" />
+                  <span>Trade Wallets</span>
+                </>
+              )}
+            </Link>
+            
+            <Link
+              href={`/admin/bots/${bot.id}/logs`}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
+            >
+              <Activity className="h-3 w-3" />
+              <span>View Logs</span>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -524,6 +582,13 @@ export default function AdminBots() {
             <span className="text-sm text-gray-400">
               Total: {pagination.total || 0} bots
             </span>
+            <Link
+              href="/admin/bots/logs"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
+            >
+              <Activity className="h-4 w-4" />
+              <span>View All Logs</span>
+            </Link>
           </div>
         </div>
 
