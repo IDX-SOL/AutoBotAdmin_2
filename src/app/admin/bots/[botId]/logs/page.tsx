@@ -15,7 +15,14 @@ export default function BotLogsPage() {
   const [logType, setLogType] = useState('all');
   const [selectedDate, setSelectedDate] = useState('');
   const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const [summary, setSummary] = useState<any>(null);
+  const [summary, setSummary] = useState<{
+    total: number;
+    byLevel: Record<string, number>;
+    dateRange: {
+      earliest: string;
+      latest: string;
+    } | null;
+  } | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   const fetchLogs = async () => {

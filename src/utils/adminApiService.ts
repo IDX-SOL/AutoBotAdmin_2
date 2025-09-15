@@ -197,17 +197,17 @@ export interface WelcomeEmailResponse {
   message: string;
   userId: number;
   timestamp: string;
-
+}
 export interface LogEntry {
   id: string;
   timestamp: string;
   level: string;
   botId: number;
   message: string;
-  metadata: any;
-  error?: any;
-  tradeData?: any;
-  walletData?: any;
+  metadata: Record<string, unknown>;
+  error?: Record<string, unknown>;
+  tradeData?: Record<string, unknown>;
+  walletData?: Record<string, unknown>;
 }
 
 export interface BotLogsResponse {
