@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { Editor } from '@tinymce/tinymce-react';
+import dynamic from 'next/dynamic';
+
+const JoditEditor = dynamic(() => import('jodit-react'), { 
+  ssr: false,
+  loading: () => <div className="h-96 bg-gray-700 rounded-md flex items-center justify-center text-gray-400">Loading editor...</div>
+});
 import { Users, Send, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import adminApiService from '@/utils/adminApiService';
-import emailService, { EmailTemplate } from '@/utils/emailService';
+import emailService from '@/utils/emailService';
+import { EmailTemplate } from '@/utils/adminApiService';
 
 interface User {
   id: string;
@@ -30,6 +36,77 @@ export default function EmailManagement() {
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Jodit Editor configuration
+  const joditConfig = {
+    readonly: false,
+    height: 400,
+    theme: 'dark',
+    toolbar: true,
+    toolbarButtonSize: 'middle' as const,
+    showCharsCounter: true,
+    showWordsCounter: true,
+    showXPathInStatusbar: false,
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: 'insert_clear_html' as const,
+    buttons: [
+      'source', '|',
+      'bold', 'italic', 'underline', '|',
+      'ul', 'ol', '|',
+      'outdent', 'indent', '|',
+      'font', 'fontsize', 'brush', '|',
+      'paragraph', '|',
+      'image', 'table', 'link', '|',
+      'align', 'undo', 'redo', '|',
+      'hr', 'eraser', 'copyformat', '|',
+      'symbol', 'fullsize', 'print', 'about'
+    ],
+    removeButtons: ['brush', 'file'],
+    zIndex: 0,
+    maxHeight: 500,
+    direction: 'ltr' as const,
+    language: 'en',
+    debugLanguage: false,
+    i18n: {
+      'en': {
+        'Type something': 'Type something...',
+        'Advanced': 'Advanced',
+        'Source': 'Source',
+        'Bold': 'Bold',
+        'Italic': 'Italic',
+        'Underline': 'Underline',
+        'Strikethrough': 'Strikethrough',
+        'Superscript': 'Superscript',
+        'Subscript': 'Subscript',
+        'Align Left': 'Align Left',
+        'Center': 'Center',
+        'Align Right': 'Align Right',
+        'Justify': 'Justify',
+        'Ordered List': 'Ordered List',
+        'Unordered List': 'Unordered List',
+        'Indent': 'Indent',
+        'Outdent': 'Outdent',
+        'Font': 'Font',
+        'Font Size': 'Font Size',
+        'Text Color': 'Text Color',
+        'Background Color': 'Background Color',
+        'Insert Link': 'Insert Link',
+        'Insert Image': 'Insert Image',
+        'Insert Table': 'Insert Table',
+        'Undo': 'Undo',
+        'Redo': 'Redo',
+        'Cut': 'Cut',
+        'Copy': 'Copy',
+        'Paste': 'Paste',
+        'Select All': 'Select All',
+        'Remove Format': 'Remove Format',
+        'Full Screen': 'Full Screen',
+        'Print': 'Print',
+        'About': 'About'
+      }
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -110,14 +187,24 @@ export default function EmailManagement() {
             name: 'Welcome Email',
             subject: 'Welcome to AutoBot Platform',
             content: '<h2>Welcome to AutoBot!</h2><p>We\'re excited to have you on board.</p>',
-            createdAt: new Date().toISOString()
+            createdBy: 1,
+            isActive: true,
+            category: 'welcome',
+            tags: ['welcome', 'onboarding'],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           },
           {
             id: 2,
             name: 'Maintenance Notice',
             subject: 'Scheduled Maintenance Notice',
             content: '<h2>Maintenance Notice</h2><p>We will be performing scheduled maintenance.</p>',
-            createdAt: new Date().toISOString()
+            createdBy: 1,
+            isActive: true,
+            category: 'maintenance',
+            tags: ['maintenance', 'notice'],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }
         ];
         setTemplates(mockTemplates);
@@ -133,14 +220,24 @@ export default function EmailManagement() {
           name: 'Welcome Email',
           subject: 'Welcome to AutoBot Platform',
           content: '<h2>Welcome to AutoBot!</h2><p>We\'re excited to have you on board.</p>',
-          createdAt: new Date().toISOString()
+          createdBy: 1,
+          isActive: true,
+          category: 'welcome',
+          tags: ['welcome', 'onboarding'],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         },
         {
           id: 2,
           name: 'Maintenance Notice',
           subject: 'Scheduled Maintenance Notice',
           content: '<h2>Maintenance Notice</h2><p>We will be performing scheduled maintenance.</p>',
-          createdAt: new Date().toISOString()
+          createdBy: 1,
+          isActive: true,
+          category: 'maintenance',
+          tags: ['maintenance', 'notice'],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
       ];
       setTemplates(mockTemplates);
@@ -396,35 +493,14 @@ export default function EmailManagement() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Content
               </label>
-              <Editor
-                apiKey="5ix2dt6n3i1nu11bzz0yj4081z0chmi9umldf9wc8nyenf0c" // You'll need to get a free API key from TinyMCE
-                value={emailContent}
-                onEditorChange={(content) => setEmailContent(content)}
-                init={{
-                  height: 400,
-                  menubar: false,
-                  plugins: [
-                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                  ],
-                  toolbar: 'undo redo | blocks | ' +
-                    'bold italic forecolor | alignleft aligncenter ' +
-                    'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
-                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; color: #ffffff; background-color: #2d2d2d; line-height: 1.6; padding: 16px; }',
-                  skin: 'oxide-dark',
-                  content_css: 'dark',
-                  branding: false,
-                  elementpath: false,
-                  resize: true,
-                  statusbar: true,
-                  paste_data_images: true,
-                  relative_urls: false,
-                  remove_script_host: false,
-                  convert_urls: false
-                }}
-              />
+              <div className="border border-gray-600 rounded-md overflow-hidden">
+                <JoditEditor
+                  value={emailContent}
+                  config={joditConfig}
+                  onBlur={(newContent) => setEmailContent(newContent)}
+                  onChange={(newContent) => setEmailContent(newContent)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-4">

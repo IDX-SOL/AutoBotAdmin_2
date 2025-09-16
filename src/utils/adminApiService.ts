@@ -177,12 +177,16 @@ export interface EmailStatus {
   schedulerRunning: boolean;
   lastRun: string | null;
   nextRun: string | null;
+  activeJobs: string[];
 }
 
 export interface EmailSchedulerResponse {
   success: boolean;
   message: string;
   timestamp: string;
+  results?: Array<{ job: string; status: string; error?: string }>;
+  templatesCreated?: number;
+  templates?: Array<{ id: number; name: string; category: string }>;
 }
 
 export interface EmailJobResponse {
@@ -190,6 +194,7 @@ export interface EmailJobResponse {
   message: string;
   jobName?: string;
   timestamp: string;
+  results?: Array<{ job: string; status: string; error?: string }>;
 }
 
 export interface WelcomeEmailResponse {
@@ -229,9 +234,60 @@ export interface BotLogsResponse {
   };
 }
 
+export interface EmailLog {
+  id: number;
+  userId: number;
+  subject: string;
+  content: string;
+  templateId?: number;
+  type: string;
+  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  sentBy: number;
+  sentAt?: string;
+  deliveredAt?: string;
+  openedAt?: string;
+  clickedAt?: string;
+  error?: string;
+  emailProvider?: string;
+  messageId?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  sender?: {
+    id: number;
+    username: string;
+  };
+}
+
+export interface EmailTemplate {
+  id: number;
+  name: string;
+  subject: string;
+  content: string;
+  createdBy: number;
+  isActive: boolean;
+  category: 'welcome' | 'notification' | 'marketing' | 'maintenance' | 'custom';
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailHistoryResponse {
+  success: boolean;
+  emails: EmailLog[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 // Create admin axios instance with different configuration
 const adminAxiosInstance: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://apiautobot.idxsolana.io',
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -363,14 +419,26 @@ const adminApiService = {
     adminAxiosInstance.post('/admin/emails/send-welcome', { userId }),
   runAllEmailAutomations: (): Promise<AxiosResponse<EmailSchedulerResponse>> => 
     adminAxiosInstance.post('/admin/emails/run-all'),
+  initializeEmailTemplates: (): Promise<AxiosResponse<EmailSchedulerResponse>> => 
+    adminAxiosInstance.post('/admin/emails/init-templates'),
   
   // Email Monitoring
-  getEmailLogs: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<unknown>> => 
+  getEmailLogs: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<EmailHistoryResponse>> => 
     adminAxiosInstance.get('/admin/emails/history', { params }),
-  getEmailLogDetails: (emailId: number): Promise<AxiosResponse<unknown>> => 
+  getEmailLogDetails: (emailId: number): Promise<AxiosResponse<{ success: boolean; email: EmailLog }>> => 
     adminAxiosInstance.get(`/admin/emails/history/${emailId}`),
-  resendEmail: (emailId: number): Promise<AxiosResponse<unknown>> => 
+  resendEmail: (emailId: number): Promise<AxiosResponse<{ success: boolean; message: string; emailId: number; timestamp: string }>> => 
     adminAxiosInstance.post(`/admin/emails/history/${emailId}/resend`),
+  
+  // Email Templates
+  getEmailTemplates: (): Promise<AxiosResponse<{ success: boolean; templates: EmailTemplate[] }>> => 
+    adminAxiosInstance.get('/admin/emails/templates'),
+  createEmailTemplate: (template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<AxiosResponse<{ success: boolean; templateId: number; message: string }>> => 
+    adminAxiosInstance.post('/admin/emails/templates', template),
+  updateEmailTemplate: (templateId: number, template: Partial<EmailTemplate>): Promise<AxiosResponse<{ success: boolean; message: string }>> => 
+    adminAxiosInstance.put(`/admin/emails/templates/${templateId}`, template),
+  deleteEmailTemplate: (templateId: number): Promise<AxiosResponse<{ success: boolean; message: string }>> => 
+    adminAxiosInstance.delete(`/admin/emails/templates/${templateId}`),
   
   // Wallet Balance Management
   getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> => 

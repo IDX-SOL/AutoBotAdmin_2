@@ -28,37 +28,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 
-interface EmailLog {
-  id: number;
-  subject: string;
-  content: string;
-  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
-  type: 'individual' | 'bulk' | 'all';
-  createdAt: string;
-  sentAt?: string;
-  deliveredAt?: string;
-  openedAt?: string;
-  clickedAt?: string;
-  error?: string;
-  emailProvider?: string;
-  messageId?: string;
-  metadata?: { emailType?: string; [key: string]: unknown };
-  user: {
-    id: number;
-    username: string;
-    email: string;
-  };
-  template?: {
-    id: number;
-    name: string;
-    category: string;
-  };
-  sender: {
-    id: number;
-    username: string;
-    email: string;
-  };
-}
+import { EmailLog } from '@/utils/adminApiService';
 
 interface EmailLogsResponse {
   emailLogs: EmailLog[];
@@ -101,14 +71,29 @@ const EmailMonitoringPage = () => {
     try {
       setLoading(true);
       const response = await adminApiService.getEmailLogs(filters);
-      const data = response.data as { success: boolean; data: EmailLogsResponse; message?: string };
+      const data = response.data;
       
       if (data.success) {
-        setEmailLogs(data.data);
+        // Convert EmailHistoryResponse to EmailLogsResponse format
+        const emailLogsData: EmailLogsResponse = {
+          emailLogs: data.emails,
+          pagination: {
+            page: data.page,
+            limit: 20, // Default limit
+            total: data.total,
+            pages: data.totalPages
+          },
+          filters: {
+            statusCounts: {},
+            typeCounts: {},
+            emailTypeCounts: {}
+          }
+        };
+        setEmailLogs(emailLogsData);
       } else {
-        console.warn('API returned error:', data.message);
-        setEmailLogs(null); // Set to null to show no data state
-        showNotification('error', data.message || 'Failed to fetch email logs');      
+        console.warn('API returned error');
+        setEmailLogs(null);
+        showNotification('error', 'Failed to fetch email logs');
       }
     } catch (error) {
       console.error('Error fetching email logs:', error);
@@ -148,13 +133,13 @@ const EmailMonitoringPage = () => {
     try {
       setActionLoading(`view-${emailId}`);
       const response = await adminApiService.getEmailLogDetails(emailId);
-      const data = response.data as { success: boolean; data: EmailLog; message?: string };
+      const data = response.data;
       
       if (data.success) {
-        setSelectedEmail(data.data);
+        setSelectedEmail(data.email);
         setShowEmailDetails(true);
       } else {
-        showNotification('error', data.message || 'Failed to fetch email details');
+        showNotification('error', 'Failed to fetch email details');
       }
     } catch (error) {
       console.error('Error fetching email details:', error);
@@ -515,28 +500,28 @@ const EmailMonitoringPage = () => {
                             }`}>
                               {email.status.toUpperCase()}
                             </span>
-                            {email.metadata?.emailType && (
+                            {/* {email.metadata?.emailType && (
                               <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-600/50 text-gray-300 border border-gray-500/50">
                                 {formatEmailType(email.metadata.emailType)}
                               </span>
-                            )}
+                            )} */}
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div className="flex items-center gap-2 text-gray-300">
                             <User className="h-4 w-4 text-blue-400" />
-                            <span className="font-medium">{email.user.username}</span>
-                            <span className="text-gray-500">({email.user.email})</span>
+                            <span className="font-medium">{email.user?.username || 'Unknown'}</span>
+                            <span className="text-gray-500">({email.user?.email || 'No email'})</span>
                           </div>
                           <div className="flex items-center gap-2 text-gray-300">
                             <Calendar className="h-4 w-4 text-green-400" />
                             <span>{formatDate(email.createdAt)}</span>
                           </div>
-                          {email.template && (
+                          {email.templateId && (
                             <div className="flex items-center gap-2 text-gray-300">
                               <FileText className="h-4 w-4 text-purple-400" />
-                              <span>{email.template.name}</span>
+                              <span>Template ID: {email.templateId}</span>
                             </div>
                           )}
                         </div>
@@ -789,10 +774,10 @@ const EmailMonitoringPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <strong>To:</strong> {selectedEmail.user.username} ({selectedEmail.user.email})
+                    <strong>To:</strong> {selectedEmail.user?.username || 'Unknown'} ({selectedEmail.user?.email || 'No email'})
                   </div>
                   <div>
-                    <strong>From:</strong> {selectedEmail.sender.username} ({selectedEmail.sender.email})
+                    <strong>From:</strong> {selectedEmail.sender?.username || 'Unknown'} (ID: {selectedEmail.sentBy})
                   </div>
                   <div>
                     <strong>Created:</strong> {formatDate(selectedEmail.createdAt)}
@@ -802,9 +787,9 @@ const EmailMonitoringPage = () => {
                       <strong>Sent:</strong> {formatDate(selectedEmail.sentAt)}
                     </div>
                   )}
-                  {selectedEmail.template && (
+                  {selectedEmail.templateId && (
                     <div>
-                      <strong>Template:</strong> {selectedEmail.template.name} ({selectedEmail.template.category})
+                      <strong>Template ID:</strong> {selectedEmail.templateId}
                     </div>
                   )}
                   {selectedEmail.messageId && (
