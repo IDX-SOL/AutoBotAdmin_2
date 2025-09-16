@@ -456,6 +456,16 @@ const adminApiService = {
   getWalletBalanceCronStatus: (): Promise<AxiosResponse<CronStatus>> => 
     adminAxiosInstance.get('/wallet-balance/cron-status'),
   
+  // New wallet balance features
+  checkBotWallets: (botId: number, checkDate?: string, includeTradeWallets?: boolean, timeWindowHours?: number): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.post(`/wallet-balance/check-bot/${botId}`, { checkDate, includeTradeWallets, timeWindowHours }),
+  checkWalletsAtDateTime: (checkDateTime: string, walletAddresses?: string[]): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.post('/wallet-balance/check-datetime', { checkDateTime, walletAddresses }),
+  checkWalletsInDateRange: (startDateTime: string, endDateTime: string): Promise<AxiosResponse<unknown>> => 
+    adminAxiosInstance.post('/wallet-balance/check-date-range', { startDateTime, endDateTime }),
+  getLastCheckedWallet: (): Promise<AxiosResponse<{ success: boolean; data: { lastCheckedWallet: string | null; hasLastChecked: boolean } }>> => 
+    adminAxiosInstance.get('/wallet-balance/last-checked'),
+  
   // Utility methods
   isAuthenticated: (): boolean => {
     if (typeof window === 'undefined') return false;

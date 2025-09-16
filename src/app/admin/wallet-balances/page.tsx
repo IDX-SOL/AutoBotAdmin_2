@@ -21,6 +21,12 @@ export default function WalletBalancesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState('today');
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
+  
+  // Date range state
+  const [startDateTime, setStartDateTime] = useState(new Date().toISOString().slice(0, 16));
+  const [endDateTime, setEndDateTime] = useState(new Date().toISOString().slice(0, 16));
+  const [rangeResults, setRangeResults] = useState<any>(null);
+  const [checkingRange, setCheckingRange] = useState(false);
 
   // Fetch wallet balances for today
   const fetchTodayBalances = async () => {
@@ -82,6 +88,31 @@ export default function WalletBalancesPage() {
       toast.error('Failed to trigger manual balance check');
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  // Check wallets in date range
+  const checkWalletsInRange = async () => {
+    if (!startDateTime || !endDateTime) {
+      toast.error('Please select both start and end date/time');
+      return;
+    }
+
+    if (new Date(startDateTime) >= new Date(endDateTime)) {
+      toast.error('End date/time must be after start date/time');
+      return;
+    }
+
+    setCheckingRange(true);
+    try {
+      const response = await adminApiService.checkWalletsInDateRange(startDateTime, endDateTime);
+      setRangeResults((response.data as any).data);
+      toast.success(`Wallet check completed for range: ${new Date(startDateTime).toLocaleString('en-IN')} - ${new Date(endDateTime).toLocaleString('en-IN')}`);
+    } catch (error) {
+      console.error('Error checking wallets in range:', error);
+      toast.error('Failed to check wallets in date range');
+    } finally {
+      setCheckingRange(false);
     }
   };
 
@@ -274,6 +305,7 @@ export default function WalletBalancesPage() {
           <TabsList className="bg-gray-800/50 border-gray-700">
             <TabsTrigger value="today" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Today&apos;s Balances</TabsTrigger>
             <TabsTrigger value="by-date" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">By Date</TabsTrigger>
+            <TabsTrigger value="date-range" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Date Range</TabsTrigger>
           </TabsList>
 
           <TabsContent value="today" className="space-y-6">
@@ -590,6 +622,230 @@ export default function WalletBalancesPage() {
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="date-range" className="space-y-6">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4 border-b border-gray-600">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white flex items-center gap-3">
+                      <div className="p-2 bg-green-600 rounded-lg">
+                        <Calendar className="h-5 w-5" />
+                      </div>
+                      Wallet Check by Date Range
+                    </h3>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Check wallet balances within a specific date and time range
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm font-medium">
+                      Range Check
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Start Date & Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={startDateTime}
+                      onChange={(e) => setStartDateTime(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:border-green-500 focus:ring-green-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      End Date & Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={endDateTime}
+                      onChange={(e) => setEndDateTime(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:border-green-500 focus:ring-green-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 mb-6">
+                  <button
+                    onClick={checkWalletsInRange}
+                    disabled={checkingRange}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${checkingRange ? 'animate-spin' : ''}`} />
+                    {checkingRange ? 'Checking...' : 'Check Wallets in Range'}
+                  </button>
+                  <button
+                    onClick={() => setRangeResults(null)}
+                    className="px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors"
+                  >
+                    Clear Results
+                  </button>
+                </div>
+
+                {/* Range Results */}
+                {rangeResults && (
+                  <div className="mt-6">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                      <Coins className="h-5 w-5" />
+                      Range Check Results
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-gray-700/30 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-300 mb-1">Total Checked</p>
+                        <p className="text-2xl font-bold text-white">{rangeResults.totalChecked || 0}</p>
+                      </div>
+                      <div className="bg-gray-700/30 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-300 mb-1">With Balance</p>
+                        <p className="text-2xl font-bold text-green-400">{rangeResults.withBalance || 0}</p>
+                      </div>
+                      <div className="bg-gray-700/30 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-300 mb-1">With SOL</p>
+                        <p className="text-2xl font-bold text-yellow-400">{rangeResults.withSol || 0}</p>
+                      </div>
+                      <div className="bg-gray-700/30 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-300 mb-1">With Tokens</p>
+                        <p className="text-2xl font-bold text-purple-400">{rangeResults.withTokens || 0}</p>
+                      </div>
+                    </div>
+
+                    {rangeResults.checkedWallets && rangeResults.checkedWallets.length > 0 && (
+                      <div className="space-y-4">
+                        <h5 className="text-md font-medium text-gray-300">
+                          Wallet Details ({rangeResults.checkedWallets.filter((w: any) => w.hasBalance).length} with balance)
+                        </h5>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {rangeResults.checkedWallets
+                            .filter((wallet: any) => wallet.hasBalance)
+                            .map((wallet: any, index: number) => (
+                            <div key={index} className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/50">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    wallet.hasBalance ? 'bg-green-400' : 'bg-gray-500'
+                                  }`}></div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-sm text-white">
+                                        {wallet.address.length > 20 ? `${wallet.address.slice(0, 8)}...${wallet.address.slice(-8)}` : wallet.address}
+                                      </span>
+                                      <button
+                                        onClick={() => copyWalletAddress(wallet.address)}
+                                        className="p-1 hover:bg-gray-500 rounded transition-colors group"
+                                        title="Copy wallet address"
+                                      >
+                                        {copiedItems.has(`wallet-${wallet.address}`) ? (
+                                          <Check className="h-3 w-3 text-green-400" />
+                                        ) : (
+                                          <Copy className="h-3 w-3 text-gray-400 group-hover:text-white" />
+                                        )}
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        wallet.type === 'owner' ? 'bg-blue-500/20 text-blue-400' :
+                                        wallet.type === 'middle' ? 'bg-purple-500/20 text-purple-400' :
+                                        'bg-green-500/20 text-green-400'
+                                      }`}>
+                                        {wallet.type}
+                                      </span>
+                                      {wallet.createdAt && (
+                                        <span className="text-xs text-gray-400">
+                                          {new Date(wallet.createdAt).toLocaleDateString('en-IN')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm text-white font-mono">
+                                    {parseFloat(wallet.solBalance) > 0 ? `${parseFloat(wallet.solBalance).toFixed(6)} SOL` : '0 SOL'}
+                                  </p>
+                                  <p className="text-xs text-gray-400">
+                                    {wallet.tokenTypes} token types
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Token Details */}
+                              {wallet.tokenBalances && wallet.tokenBalances.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-gray-600/30">
+                                  <p className="text-xs text-gray-400 mb-2">Token Balances:</p>
+                                  <div className="space-y-2">
+                                    {wallet.tokenBalances.map((token: any, tokenIndex: number) => (
+                                      <div key={tokenIndex} className="flex items-center justify-between bg-gray-600/30 rounded p-2">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs font-medium text-blue-400">
+                                              {token.token}
+                                            </span>
+                                            <button
+                                              onClick={() => copyWalletAddress(token.mint)}
+                                              className="p-1 hover:bg-gray-500 rounded transition-colors group"
+                                              title="Copy token mint address"
+                                            >
+                                              {copiedItems.has(token.mint) ? (
+                                                <Check className="h-3 w-3 text-green-400" />
+                                              ) : (
+                                                <Copy className="h-3 w-3 text-gray-400 group-hover:text-white" />
+                                              )}
+                                            </button>
+                                          </div>
+                                          <p className="text-xs text-gray-500 font-mono mt-1">
+                                            {token.mint.length > 20 ? `${token.mint.slice(0, 8)}...${token.mint.slice(-8)}` : token.mint}
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xs text-white font-mono">
+                                            {parseFloat(token.balance).toFixed(6)}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            {token.decimals} decimals
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rangeResults.errors && rangeResults.errors.length > 0 && (
+                      <div className="mt-4">
+                        <h5 className="text-sm font-medium text-red-400 mb-2">Errors ({rangeResults.errors.length})</h5>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {rangeResults.errors.map((error: any, index: number) => (
+                            <div key={index} className="text-xs text-red-300 bg-red-500/10 rounded p-2">
+                              <span className="font-mono">{error.wallet}</span> ({error.type}): {error.error}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!rangeResults && (
+                  <div className="text-center py-12">
+                    <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-white mb-2">No Range Check Performed</h3>
+                    <p className="text-gray-400">Select a date range and click "Check Wallets in Range" to see results.</p>
                   </div>
                 )}
               </div>
