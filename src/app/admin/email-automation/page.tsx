@@ -74,6 +74,7 @@ const EmailAutomationPage = () => {
     isActive: true
   });
   const [templateLoading, setTemplateLoading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
   const [editorContent, setEditorContent] = useState('');
 
