@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import dynamic from 'next/dynamic';
 
@@ -36,6 +36,8 @@ export default function EmailManagement() {
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const editorRef = useRef<any>(null);
+  const [editorContent, setEditorContent] = useState('');
 
   // Jodit Editor configuration
   const joditConfig = {
@@ -119,6 +121,11 @@ export default function EmailManagement() {
       console.log('🔍 Notification state changed:', notification);
     }
   }, [notification]);
+
+  // Sync editor content when email content changes
+  useEffect(() => {
+    setEditorContent(emailContent);
+  }, [emailContent]);
 
   const fetchUsers = async () => {
     try {
@@ -263,6 +270,7 @@ export default function EmailManagement() {
   const handleTemplateSelect = (template: EmailTemplate) => {
     setEmailSubject(template.subject);
     setEmailContent(template.content);
+    setEditorContent(template.content);
     setSelectedTemplate(template.id);
     setShowTemplates(false);
   };
@@ -325,6 +333,7 @@ export default function EmailManagement() {
         // Reset form
         setEmailSubject('');
         setEmailContent('');
+        setEditorContent('');
         setSelectedUsers([]);
         setSelectedTemplate(null);
       } else {
@@ -495,10 +504,10 @@ export default function EmailManagement() {
               </label>
               <div className="border border-gray-600 rounded-md overflow-hidden">
                 <JoditEditor
-                  value={emailContent}
+                  ref={editorRef}
+                  value={editorContent}
                   config={joditConfig}
                   onBlur={(newContent) => setEmailContent(newContent)}
-                  onChange={(newContent) => setEmailContent(newContent)}
                 />
               </div>
             </div>

@@ -45,7 +45,7 @@ export default function AdminBots() {
   const fetchBots = useCallback(async () => {
     try {
       console.log("Fetching bots with params:", { currentPage, statusFilter, deletedFilter });
-      
+
       // Pass parameters as an object instead of a string
       const params = {
         page: currentPage,
@@ -53,18 +53,18 @@ export default function AdminBots() {
         status: statusFilter,
         deleted: deletedFilter
       };
-      
+
       const response = await adminApiService.getBots(params);
-      
+
       console.log("Raw response:", response);
       console.log("Response type:", typeof response);
       console.log("Response.data:", response?.data);
       console.log("Response.data type:", typeof response?.data);
-      
+
       // Check if response and response.data exist
       if (response && response.data) {
         console.log("Bots data:", response.data);
-        
+
         // Safely extract data with fallbacks
         const botsData = response.data.bots || [];
         const paginationData = response.data.pagination || {
@@ -73,10 +73,10 @@ export default function AdminBots() {
           total: 0,
           totalPages: 1
         };
-        
+
         console.log("Extracted bots data:", botsData);
         console.log("Extracted pagination data:", paginationData);
-        
+
         setBots(botsData);
         setPagination(paginationData);
         setTotalPages(paginationData.totalPages || 1);
@@ -95,7 +95,7 @@ export default function AdminBots() {
       console.error("Error fetching bots:", error);
       console.error("Error type:", typeof error);
       console.error("Error stringified:", JSON.stringify(error, null, 2));
-      
+
       // Set default values on error
       setBots([]);
       setPagination({
@@ -113,34 +113,34 @@ export default function AdminBots() {
   useEffect(() => {
     fetchBots();
   }, [fetchBots]);
- const handleDelete = async (id: string, botName?: string) => {
-  // Show confirmation dialog
-  const confirmed = window.confirm(
-    `Are you sure you want to delete the bot "${botName || 'this bot'}"? This action cannot be undone.`
-  );
-  
-  if (!confirmed) {
-    return;
-  }
+  const handleDelete = async (id: string, botName?: string) => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the bot "${botName || 'this bot'}"? This action cannot be undone.`
+    );
 
-  try {
-    console.log("Deleting bot:", id);
-    const res = await adminApiService.deleteBot(id);
-    console.log("Bot deleted:", res);
-    
-    // Show success notification
-    showSuccess("Bot deleted successfully!");
-    
-    // Refresh the bots list
-    await fetchBots();
-  } catch (err) {
-    console.error("Error deleting bot:", err);
-    
-    // Show error notification
-    const errorMessage = err instanceof Error ? err.message : "Failed to delete bot";
-    showError(`Error: ${errorMessage}`);
-  }
- };
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      console.log("Deleting bot:", id);
+      const res = await adminApiService.deleteBot(id);
+      console.log("Bot deleted:", res);
+
+      // Show success notification
+      showSuccess("Bot deleted successfully!");
+
+      // Refresh the bots list
+      await fetchBots();
+    } catch (err) {
+      console.error("Error deleting bot:", err);
+
+      // Show error notification
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete bot";
+      showError(`Error: ${errorMessage}`);
+    }
+  };
 
   // const getStatusColor = (status: string | undefined) => {
   //   if (!status) return "bg-gray-500/20 text-gray-400";
@@ -207,9 +207,9 @@ export default function AdminBots() {
         refunded: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '' },
         refunding: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: '' }
       };
-      
+
       const config = statusConfig[status || 'stopped'] || statusConfig.stopped;
-      
+
       return (
         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${config.color}`}>
           <span className="text-xs">{config.icon}</span>
@@ -257,7 +257,7 @@ export default function AdminBots() {
               )}
             </div>
           </div>
-          
+
           {/* Quick Stats */}
           <div className="flex items-center gap-3 text-xs">
             <div className="text-center">
@@ -270,8 +270,8 @@ export default function AdminBots() {
                 {bot?.tokenSymbol || "N/A"}
               </p>
             </div>
-           
-            
+
+
           </div>
         </div>
 
@@ -286,9 +286,8 @@ export default function AdminBots() {
               </span>
               <button
                 onClick={() => bot.userWallet && handleCopy(bot.userWallet, 'userWallet')}
-                className={`p-1 rounded transition-colors ${
-                  copiedField === 'userWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
-                }`}
+                className={`p-1 rounded transition-colors ${copiedField === 'userWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
+                  }`}
                 title="Copy user wallet"
                 disabled={!bot.userWallet}
               >
@@ -304,7 +303,7 @@ export default function AdminBots() {
               </Link>
             </div>
           </div>
-          
+
           <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-xs text-gray-400 mb-1">Bot Wallet</p>
             <div className="flex items-center justify-center gap-1">
@@ -313,9 +312,8 @@ export default function AdminBots() {
               </span>
               <button
                 onClick={() => bot.ownerWalletAddress && handleCopy(bot.ownerWalletAddress, 'botWallet')}
-                className={`p-1 rounded transition-colors ${
-                  copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
-                }`}
+                className={`p-1 rounded transition-colors ${copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
+                  }`}
                 title="Copy bot wallet"
                 disabled={!bot.ownerWalletAddress}
               >
@@ -339,9 +337,8 @@ export default function AdminBots() {
               </span>
               <button
                 onClick={() => bot.middleWalletAddress && handleCopy(bot.middleWalletAddress, 'botWallet')}
-                className={`p-1 rounded transition-colors ${
-                  copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
-                }`}
+                className={`p-1 rounded transition-colors ${copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'
+                  }`}
                 title="Copy bot wallet"
                 disabled={!bot.middleWalletAddress}
               >
@@ -357,7 +354,7 @@ export default function AdminBots() {
               </Link>
             </div>
           </div>
-          
+
           <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-xs text-gray-400 mb-1">Token</p>
             <div className="flex items-center justify-center gap-1">
@@ -366,9 +363,8 @@ export default function AdminBots() {
               </span>
               <button
                 onClick={() => bot.tokenAddress && handleCopy(bot.tokenAddress, 'tokenAddress')}
-                className={`p-1 rounded transition-colors ${
-                  copiedField === 'tokenAddress' ? 'text-green-400' : 'text-gray-400 hover:text-white'
-                }`}
+                className={`p-1 rounded transition-colors ${copiedField === 'tokenAddress' ? 'text-green-400' : 'text-gray-400 hover:text-white'
+                  }`}
                 title="Copy token address"
                 disabled={!bot.tokenAddress}
               >
@@ -384,8 +380,8 @@ export default function AdminBots() {
               </Link>
             </div>
           </div>
-          
-          <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
+
+          {/* <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-xs text-gray-400 mb-1">Bot Logs</p>
             <div className="flex items-center justify-center gap-1">
               <Link
@@ -410,21 +406,21 @@ export default function AdminBots() {
                 <CheckCircle className="h-3 w-3" />
               </Link>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Bottom Row - User Info & Action */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-gray-500">
-            
+
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {bot.createdAt
-                ? new Date(bot.createdAt).toLocaleString('en-IN', { 
-                    timeZone: 'Asia/Kolkata',
-                    dateStyle: 'short',
-                    timeStyle: 'short'
-                  })
+                ? new Date(bot.createdAt).toLocaleString('en-IN', {
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                })
                 : "Unknown"}
             </span>
             {bot.lastTradeAt && (
@@ -436,7 +432,7 @@ export default function AdminBots() {
             {bot.deletedAt && (
               <span className="flex items-center gap-1 text-red-400">
                 <Trash2 className="h-3 w-3 cursor-pointer" onClick={() => handleDelete(bot.id, bot.botName)} />
-                 {new Date(bot.deletedAt).toLocaleString('en-IN', { 
+                {new Date(bot.deletedAt).toLocaleString('en-IN', {
                   timeZone: 'Asia/Kolkata',
                   dateStyle: 'short',
                   timeStyle: 'short'
@@ -450,41 +446,38 @@ export default function AdminBots() {
                 {bot?.firstRechageDate?"Yes":"No"}
               </p>
             </div> */}
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <div
-            className={`inline-flex items-center gap-2 px-3 py-1.5 ${bot?.firstRechageDate?"bg-green-600 hover:bg-green-700 text-white":"bg-red-600 hover:bg-red-700 text-white"} text-xs font-medium rounded-md transition-colors ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 ${bot?.firstRechageDate ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"} text-xs font-medium rounded-md transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             // onClick={() => setIsLoading(true)}
-          >
-            
+            >
+
               <>
-                {bot?.firstRechageDate?<CheckCircle2 className="h-3 w-3" />:<X className="h-3 w-3" />}
+                {bot?.firstRechageDate ? <CheckCircle2 className="h-3 w-3" /> : <X className="h-3 w-3" />}
                 <span>First Rechage</span>
               </>
-          </div>
-          <Link
-            href={`/admin/bots/${bot.id}/trade-wallets`}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            onClick={() => setIsLoading(true)}
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
-                <span>Loading</span>
-              </>
-            ) : (
-              <>
-                <Wallet className="h-3 w-3" />
-                <span>Trade Wallets</span>
-              </>
-            )}
-          </Link></div>
-          
-          <div className="flex gap-2">
+            </div>
             <Link
+              href={`/admin/bots/${bot.id}/trade-wallets`}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              onClick={() => setIsLoading(true)}
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                  <span>Loading</span>
+                </>
+              ) : (
+                <>
+                  <Wallet className="h-3 w-3" />
+                  <span>Trade Wallets</span>
+                </>
+              )}
+            </Link>
+          
+            {/* <Link
               href={`/admin/bots/${bot.id}/trade-wallets`}
               className={`inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors ${
                 isLoading ? 'opacity-50 cursor-not-allowed' : ''
@@ -502,8 +495,8 @@ export default function AdminBots() {
                   <span>Trade Wallets</span>
                 </>
               )}
-            </Link>
-            
+            </Link> */}
+
             <Link
               href={`/admin/bots/${bot.id}/logs`}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
@@ -538,11 +531,10 @@ export default function AdminBots() {
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`px-3 py-2 text-sm font-medium rounded-lg ${
-                currentPage === page
+              className={`px-3 py-2 text-sm font-medium rounded-lg ${currentPage === page
                   ? "bg-blue-600 text-white"
                   : "text-gray-400 hover:text-white hover:bg-gray-700"
-              }`}
+                }`}
             >
               {page}
             </button>
@@ -598,7 +590,7 @@ export default function AdminBots() {
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <div className="flex items-center space-x-4">
             <div className="flex-1">
-             
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -611,7 +603,7 @@ export default function AdminBots() {
                 <option value="refunded">Refunded</option>
               </select>
             </div>
-           
+
             <div className="flex items-end">
               <button
                 onClick={() => {

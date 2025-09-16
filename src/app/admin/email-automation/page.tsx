@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import adminApiService from '@/utils/adminApiService';
 import emailService, { EmailSchedulerStatus } from '@/utils/emailService';
 import dynamic from 'next/dynamic';
@@ -74,6 +74,8 @@ const EmailAutomationPage = () => {
     isActive: true
   });
   const [templateLoading, setTemplateLoading] = useState(false);
+  const editorRef = useRef<any>(null);
+  const [editorContent, setEditorContent] = useState('');
 
   // Jodit Editor configuration
   const joditConfig = {
@@ -328,6 +330,7 @@ const EmailAutomationPage = () => {
         tags: template.tags,
         isActive: template.isActive
       });
+      setEditorContent(template.content);
     } else {
       setEditingTemplate(null);
       setTemplateForm({
@@ -338,6 +341,7 @@ const EmailAutomationPage = () => {
         tags: [],
         isActive: true
       });
+      setEditorContent('');
     }
     setShowTemplateModal(true);
   };
@@ -353,6 +357,7 @@ const EmailAutomationPage = () => {
       tags: [],
       isActive: true
     });
+    setEditorContent('');
   };
 
   const saveTemplate = async () => {
@@ -459,6 +464,11 @@ const EmailAutomationPage = () => {
     fetchTemplates();
   }, [fetchStats, fetchTemplates]);
 
+  // Sync editor content when template form changes
+  useEffect(() => {
+    setEditorContent(templateForm.content);
+  }, [templateForm.content]);
+
   if (loading) {
     return (
       <AdminLayout>
@@ -530,7 +540,7 @@ const EmailAutomationPage = () => {
               )}
               <span>Stop Scheduler</span>
             </button>
-            <button
+            {/* <button
               onClick={initializeTemplates}
               disabled={actionLoading === 'init-templates'}
               className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 rounded-lg text-white font-medium transition-colors"
@@ -541,7 +551,7 @@ const EmailAutomationPage = () => {
                 <Settings className="h-4 w-4" />
               )}
               <span>Init Templates</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -859,7 +869,7 @@ const EmailAutomationPage = () => {
                   </CardDescription>
                 </div>
                 <div className="flex space-x-3">
-                  <Button 
+                  {/* <Button 
                     onClick={initializeTemplates} 
                     disabled={actionLoading === 'init-templates'} 
                     variant="outline"
@@ -871,7 +881,7 @@ const EmailAutomationPage = () => {
                       <Settings className="h-4 w-4 mr-2" />
                     )}
                     Initialize Templates
-                  </Button>
+                  </Button> */}
                   <Button 
                     onClick={() => openTemplateModal()}
                     className="bg-blue-600 hover:bg-blue-700"
@@ -1119,10 +1129,12 @@ const EmailAutomationPage = () => {
                 <label className="block text-sm font-medium mb-2 text-gray-300">Content *</label>
                 <div className="border border-gray-600 rounded-md overflow-hidden">
                   <JoditEditor
-                    value={templateForm.content}
+                    ref={editorRef}
+                    value={editorContent}
                     config={joditConfig}
-                    onBlur={(newContent) => setTemplateForm(prev => ({ ...prev, content: newContent }))}
-                    onChange={(newContent) => setTemplateForm(prev => ({ ...prev, content: newContent }))}
+                    onBlur={(newContent) => {
+                      setTemplateForm(prev => ({ ...prev, content: newContent }));
+                    }}
                   />
                 </div>
               </div>
