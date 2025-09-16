@@ -247,7 +247,7 @@ export default function BotTradeWalletsPage() {
                     Check Bot Wallets
                   </h3>
                   <p className="text-sm text-gray-400">
-                    Check SOL and token balances for this bot's owner, middle, and trade wallets (with optional filtering)
+                    Check SOL and token balances for this bot&apos;s owner, middle, and trade wallets (with optional filtering)
                   </p>
                 </div>
               </div>

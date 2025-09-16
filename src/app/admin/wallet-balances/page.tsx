@@ -25,7 +25,35 @@ export default function WalletBalancesPage() {
   // Date range state
   const [startDateTime, setStartDateTime] = useState(new Date().toISOString().slice(0, 16));
   const [endDateTime, setEndDateTime] = useState(new Date().toISOString().slice(0, 16));
-  const [rangeResults, setRangeResults] = useState<any>(null);
+  const [rangeResults, setRangeResults] = useState<{
+    startDateTime: string;
+    endDateTime: string;
+    totalChecked: number;
+    successful: number;
+    failed: number;
+    withBalance: number;
+    withSol: number;
+    withTokens: number;
+    withBoth: number;
+    errors: Array<{ wallet: string; type: string; error: string }>;
+    checkedWallets: Array<{
+      address: string;
+      type: string;
+      createdAt: string | null;
+      status?: string;
+      hasBalance: boolean;
+      solBalance: number | string;
+      tokenTypes: number;
+      tokenBalances: Array<{
+        mint: string;
+        token: string;
+        balance: string;
+        balanceRaw: string;
+        decimals: number;
+        tokenAccount: string;
+      }>;
+    }>;
+  } | null>(null);
   const [checkingRange, setCheckingRange] = useState(false);
 
   // Fetch wallet balances for today
@@ -106,7 +134,7 @@ export default function WalletBalancesPage() {
     setCheckingRange(true);
     try {
       const response = await adminApiService.checkWalletsInDateRange(startDateTime, endDateTime);
-      setRangeResults((response.data as any).data);
+      setRangeResults((response.data as { data: typeof rangeResults }).data);
       toast.success(`Wallet check completed for range: ${new Date(startDateTime).toLocaleString('en-IN')} - ${new Date(endDateTime).toLocaleString('en-IN')}`);
     } catch (error) {
       console.error('Error checking wallets in range:', error);
@@ -724,12 +752,12 @@ export default function WalletBalancesPage() {
                     {rangeResults.checkedWallets && rangeResults.checkedWallets.length > 0 && (
                       <div className="space-y-4">
                         <h5 className="text-md font-medium text-gray-300">
-                          Wallet Details ({rangeResults.checkedWallets.filter((w: any) => w.hasBalance).length} with balance)
+                          Wallet Details ({rangeResults.checkedWallets.filter((w) => w.hasBalance).length} with balance)
                         </h5>
                         <div className="space-y-3 max-h-96 overflow-y-auto">
-                          {rangeResults.checkedWallets
-                            .filter((wallet: any) => wallet.hasBalance)
-                            .map((wallet: any, index: number) => (
+                                        {rangeResults.checkedWallets
+                                            .filter((wallet) => wallet.hasBalance)
+                                            .map((wallet, index: number) => (
                             <div key={index} className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/50">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -771,7 +799,7 @@ export default function WalletBalancesPage() {
                                 </div>
                                 <div className="text-right">
                                   <p className="text-sm text-white font-mono">
-                                    {parseFloat(wallet.solBalance) > 0 ? `${parseFloat(wallet.solBalance).toFixed(6)} SOL` : '0 SOL'}
+                                    {parseFloat(String(wallet.solBalance)) > 0 ? `${parseFloat(String(wallet.solBalance)).toFixed(6)} SOL` : '0 SOL'}
                                   </p>
                                   <p className="text-xs text-gray-400">
                                     {wallet.tokenTypes} token types
@@ -784,7 +812,7 @@ export default function WalletBalancesPage() {
                                 <div className="mt-3 pt-3 border-t border-gray-600/30">
                                   <p className="text-xs text-gray-400 mb-2">Token Balances:</p>
                                   <div className="space-y-2">
-                                    {wallet.tokenBalances.map((token: any, tokenIndex: number) => (
+                                                            {wallet.tokenBalances.map((token, tokenIndex: number) => (
                                       <div key={tokenIndex} className="flex items-center justify-between bg-gray-600/30 rounded p-2">
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2">
@@ -826,11 +854,11 @@ export default function WalletBalancesPage() {
                       </div>
                     )}
 
-                    {rangeResults.errors && rangeResults.errors.length > 0 && (
-                      <div className="mt-4">
-                        <h5 className="text-sm font-medium text-red-400 mb-2">Errors ({rangeResults.errors.length})</h5>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {rangeResults.errors.map((error: any, index: number) => (
+                        {rangeResults.errors && rangeResults.errors.length > 0 && (
+                          <div className="mt-4">
+                            <h5 className="text-sm font-medium text-red-400 mb-2">Errors ({rangeResults.errors.length})</h5>
+                            <div className="space-y-1 max-h-32 overflow-y-auto">
+                              {rangeResults.errors.map((error, index: number) => (
                             <div key={index} className="text-xs text-red-300 bg-red-500/10 rounded p-2">
                               <span className="font-mono">{error.wallet}</span> ({error.type}): {error.error}
                             </div>
@@ -845,7 +873,7 @@ export default function WalletBalancesPage() {
                   <div className="text-center py-12">
                     <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                     <h3 className="text-lg font-medium text-white mb-2">No Range Check Performed</h3>
-                    <p className="text-gray-400">Select a date range and click "Check Wallets in Range" to see results.</p>
+                            <p className="text-gray-400">Select a date range and click &quot;Check Wallets in Range&quot; to see results.</p>
                   </div>
                 )}
               </div>
