@@ -40,7 +40,7 @@ export interface Bot {
   ownerWalletAddress?: string;
   middleWalletAddress?: string;
   tokenAddress?: string;
-  gasFees?: number;
+  gasFees?: any;
   deletedAt?: string;
   user?: {
     id?: string;
@@ -52,6 +52,22 @@ export interface Bot {
   // Optional fields that might not be returned by the backend
   lastTradeAt?: string;
   firstRechageDate?: boolean;
+  // Enhanced fields for bot detail page
+  lastLogs?: any[];
+  lastTrades?: any[];
+  warnings?: any[];
+  errors?: any[];
+  balanceInfo?: {
+    sol: number;
+    token: number;
+    lastUpdated: string | null;
+    critical: boolean;
+  };
+  notificationStates?: {
+    lowBalance1_5: boolean;
+    lowBalance2_25: boolean;
+    lowBalance2_5: boolean;
+  };
 }
 
 export interface DashboardStats {

@@ -498,6 +498,13 @@ export default function AdminBots() {
             </Link> */}
 
             <Link
+              href={`/admin/bots/${bot.id}`}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors"
+            >
+              <BotIcon className="h-3 w-3" />
+              <span>View Details</span>
+            </Link>
+            <Link
               href={`/admin/bots/${bot.id}/logs`}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
             >
