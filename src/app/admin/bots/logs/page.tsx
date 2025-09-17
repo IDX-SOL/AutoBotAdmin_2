@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Activity, AlertCircle, CheckCircle, Clock, Filter, RefreshCw } from 'lucide-react';
-import adminApiService, { LogEntry, BotLogsResponse, Bot } from '../../../../utils/adminApiService';
+import adminApiService, { LogEntry, Bot } from '../../../../utils/adminApiService';
 
 export default function AllBotsLogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -31,7 +31,7 @@ export default function AllBotsLogsPage() {
     }
   };
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -81,7 +81,7 @@ export default function AllBotsLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedBot, logType, selectedDate, bots]);
 
   useEffect(() => {
     fetchBots();
@@ -91,7 +91,7 @@ export default function AllBotsLogsPage() {
     if (bots.length > 0) {
       fetchLogs();
     }
-  }, [bots, selectedBot, logType, selectedDate]);
+  }, [bots, fetchLogs]);
 
   // Auto refresh effect
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function AllBotsLogsPage() {
 
     const interval = setInterval(fetchLogs, 10000); // Refresh every 10 seconds
     return () => clearInterval(interval);
-  }, [autoRefresh, selectedBot, logType, selectedDate]);
+  }, [autoRefresh, fetchLogs]);
 
   const getLevelColor = (level: string) => {
     switch (level) {

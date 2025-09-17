@@ -40,7 +40,7 @@ export interface Bot {
   ownerWalletAddress?: string;
   middleWalletAddress?: string;
   tokenAddress?: string;
-  gasFees?: any;
+  gasFees?: Record<string, unknown>;
   deletedAt?: string;
   user?: {
     id?: string;
@@ -53,10 +53,10 @@ export interface Bot {
   lastTradeAt?: string;
   firstRechageDate?: boolean;
   // Enhanced fields for bot detail page
-  lastLogs?: any[];
-  lastTrades?: any[];
-  warnings?: any[];
-  errors?: any[];
+  lastLogs?: Array<Record<string, unknown>>;
+  lastTrades?: Array<Record<string, unknown>>;
+  warnings?: Array<Record<string, unknown>>;
+  errors?: Array<Record<string, unknown>>;
   balanceInfo?: {
     sol: number;
     token: number;

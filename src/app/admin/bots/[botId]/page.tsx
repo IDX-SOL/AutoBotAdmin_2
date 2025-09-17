@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
 import adminApiService, { Bot } from '@/utils/adminApiService';
@@ -16,10 +16,7 @@ import {
   AlertCircle,
   CheckCircle2,
   X,
-  TrendingUp,
-  DollarSign,
   Clock,
-  Settings,
   User,
   Smartphone,
   Monitor,
@@ -37,18 +34,47 @@ import {
 import { useToast } from '@/components/Toast/ToastContext';
 import Link from 'next/link';
 
+interface LogEntry {
+  timestamp: string;
+  message: string;
+  type?: string;
+  [key: string]: unknown;
+}
+
+interface TradeEntry {
+  timestamp: string;
+  [key: string]: unknown;
+}
+
+interface WarningEntry {
+  timestamp: string;
+  message: string;
+  details?: unknown;
+  [key: string]: unknown;
+}
+
+interface ErrorEntry {
+  timestamp: string;
+  message: string;
+  [key: string]: unknown;
+}
+
+interface GasFees {
+  [key: string]: number | string;
+}
+
 interface BotDetailData extends Bot {
-  lastLogs?: any[];
-  lastTrades?: any[];
-  warnings?: any[];
-  errors?: any[];
+  lastLogs?: LogEntry[];
+  lastTrades?: TradeEntry[];
+  warnings?: WarningEntry[];
+  errors?: ErrorEntry[];
   balanceInfo?: {
     sol: number;
     token: number;
     lastUpdated: string | null;
     critical: boolean;
   };
-  gasFees?: any;
+  gasFees?: GasFees;
   notificationStates?: {
     lowBalance0_3?: boolean;
     lowBalance1_5: boolean;
@@ -76,24 +102,24 @@ export default function BotDetailPage() {
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
-    if (botId) {
-    fetchBotDetails();
-    }
-  }, [botId]);
-
-  const fetchBotDetails = async () => {
+  const fetchBotDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminApiService.getBot(botId);
-        setBot(response.data);
+      setBot(response.data as BotDetailData);
     } catch (error) {
       console.error('Error fetching bot details:', error);
       showError('Failed to fetch bot details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [botId, showError]);
+
+  useEffect(() => {
+    if (botId) {
+      fetchBotDetails();
+    }
+  }, [botId, fetchBotDetails]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -137,9 +163,6 @@ export default function BotDetailPage() {
     });
   };
 
-  const formatBalance = (balance: number) => {
-    return balance.toFixed(6);
-  };
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: BarChart3 },
@@ -213,7 +236,7 @@ export default function BotDetailPage() {
         <div className="text-center py-12">
           <BotIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">Bot not found</h3>
-          <p className="text-gray-400 mb-4">The bot you're looking for doesn't exist or has been deleted.</p>
+          <p className="text-gray-400 mb-4">The bot you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
           <Link
             href="/admin/bots"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
@@ -887,7 +910,7 @@ export default function BotDetailPage() {
                             <div className="flex-1">
                               <p className="text-white text-sm">{warning.message}</p>
                               <p className="text-orange-300 text-xs mt-1">{formatTimestamp(warning.timestamp)}</p>
-                              {warning.details && (
+                              {!!warning.details && (
                                 <details className="mt-2">
                                   <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-300">
                                     View Details

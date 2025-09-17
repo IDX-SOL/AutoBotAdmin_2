@@ -16,8 +16,6 @@ import {
   Monitor,
   X,
   CheckCircle2,
-  AlertCircle,
-  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/Toast/ToastContext';

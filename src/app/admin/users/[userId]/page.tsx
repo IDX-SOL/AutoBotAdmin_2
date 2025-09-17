@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
 import adminApiService, { User } from '@/utils/adminApiService';
@@ -11,29 +11,17 @@ import {
   Calendar,
   Bot,
   Activity,
-  Shield,
   CheckCircle2,
   X,
   Smartphone,
   Monitor,
-  Globe,
   Settings,
-  BarChart3,
-  TrendingUp,
+  RefreshCw,
+  Award,
   AlertTriangle,
   Clock,
-  Copy,
-  Check,
-  ExternalLink,
-  RefreshCw,
-  Eye,
-  Edit,
-  Trash2,
-  Award,
-  Hash,
-  Zap,
-  DollarSign,
-  Bell
+  BarChart3,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/components/Toast/ToastContext';
 import Link from 'next/link';
@@ -70,16 +58,9 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<UserDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    if (userId) {
-      fetchUserDetails();
-    }
-  }, [userId]);
-
-  const fetchUserDetails = async () => {
+  const fetchUserDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminApiService.getUser(userId);
@@ -90,7 +71,13 @@ export default function UserDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, showError]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserDetails();
+    }
+  }, [userId, fetchUserDetails]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -99,11 +86,6 @@ export default function UserDetailPage() {
     showSuccess('User data refreshed');
   };
 
-  const handleCopy = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
 
   const getStatusBadge = (status: string | undefined) => {
     const statusConfig: Record<string, { color: string; icon: string; bgColor: string }> = {
@@ -154,7 +136,7 @@ export default function UserDetailPage() {
         <div className="text-center py-12">
           <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">User not found</h3>
-          <p className="text-gray-400 mb-4">The user you're looking for doesn't exist or has been deleted.</p>
+          <p className="text-gray-400 mb-4">The user you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
           <Link
             href="/admin/users"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
@@ -405,7 +387,7 @@ export default function UserDetailPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Bot className="h-5 w-5" />
-                    User's Bots ({user.bots?.length || 0})
+                    User&apos;s Bots ({user.bots?.length || 0})
                   </h3>
                 </div>
 
@@ -456,7 +438,7 @@ export default function UserDetailPage() {
                   <div className="text-center py-8">
                     <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-400">No bots found</p>
-                    <p className="text-sm text-gray-500 mt-2">This user hasn't created any bots yet</p>
+                    <p className="text-sm text-gray-500 mt-2">This user hasn&apos;t created any bots yet</p>
                   </div>
                 )}
               </div>

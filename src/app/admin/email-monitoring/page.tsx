@@ -217,11 +217,6 @@ const EmailMonitoringPage = () => {
       minute: '2-digit'
     });
   };
-  // Format email type
-  const formatEmailType = (emailType: string | undefined) => {
-    if (!emailType) return 'Unknown';
-    return emailType.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-  };
 
   useEffect(() => {
     fetchEmailLogs();
