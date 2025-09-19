@@ -155,12 +155,12 @@ export default function UserDetailPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link
+            {/* <Link
               href="/admin/users"
               className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="h-5 w-5 text-gray-400" />
-            </Link>
+            </Link> */}
             <div>
               <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                 <UserIcon className="h-8 w-8 text-blue-400" />
