@@ -52,13 +52,14 @@ export interface Bot {
   // Optional fields that might not be returned by the backend
   lastTradeAt?: string;
   firstRechageDate?: boolean;
+  firstFundAdd?: boolean;
   // Enhanced fields for bot detail page
   lastLogs?: Array<Record<string, unknown>>;
   lastTrades?: Array<Record<string, unknown>>;
   warnings?: Array<Record<string, unknown>>;
   errors?: Array<Record<string, unknown>>;
   balanceInfo?: {
-    sol: number;
+    sol: number;  
     token: number;
     lastUpdated: string | null;
     critical: boolean;
