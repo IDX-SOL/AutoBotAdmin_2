@@ -526,7 +526,7 @@ export default function AdminCampaigns() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
-                      {filteredCampaigns.filter(c => c.tokenAddress).map((campaign) => (
+                      {filteredCampaigns.map((campaign) => (
                         <tr key={campaign.id} className="hover:bg-gray-700/50">
                           <td className="px-6 py-4">
                             <div>
@@ -536,18 +536,22 @@ export default function AdminCampaigns() {
                           </td>
                           <td className="px-6 py-4 text-gray-300">{campaign.utmSource || 'Direct'}</td>
                           <td className="px-6 py-4">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-white font-mono text-sm">
-                                {formatTokenAddress(campaign.tokenAddress!)}
-                              </span>
-                              <button
-                                onClick={() => copyToClipboard(campaign.tokenAddress!)}
-                                className="text-gray-400 hover:text-gray-300"
-                                title="Copy full address"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </button>
-                            </div>
+                            {campaign.tokenAddress ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-white font-mono text-sm">
+                                  {formatTokenAddress(campaign.tokenAddress)}
+                                </span>
+                                <button
+                                  onClick={() => copyToClipboard(campaign.tokenAddress!)}
+                                  className="text-gray-400 hover:text-gray-300"
+                                  title="Copy full address"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 text-sm">No token</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 text-gray-300">{campaign.visitCount}</td>
                           <td className="px-6 py-4">
