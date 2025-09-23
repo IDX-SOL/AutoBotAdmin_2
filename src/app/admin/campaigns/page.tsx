@@ -58,6 +58,10 @@ interface Campaign {
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  user?: {
+    username: string;
+    email: string;
+  };
 }
 
 export default function AdminCampaigns() {
@@ -393,6 +397,7 @@ export default function AdminCampaigns() {
                       <th className="px-6 py-3">Campaign</th>
                       <th className="px-6 py-3">Source</th>
                       <th className="px-6 py-3">Medium</th>
+                      <th className="px-6 py-3">User</th>
                       <th className="px-6 py-3">Token Address</th>
                       <th className="px-6 py-3">Visits</th>
                       <th className="px-6 py-3">Status</th>
@@ -411,6 +416,18 @@ export default function AdminCampaigns() {
                         </td>
                         <td className="px-6 py-4 text-gray-300">{campaign.utmSource || 'Direct'}</td>
                         <td className="px-6 py-4 text-gray-300">{campaign.utmMedium || 'None'}</td>
+                        <td className="px-6 py-4">
+                          {campaign.userId ? (
+                            <a 
+                              href={`/admin/users/${campaign.userId}`}
+                              className="text-blue-400 hover:text-blue-300 underline"
+                            >
+                              {campaign.user?.username || `User ${campaign.userId}`}
+                            </a>
+                          ) : (
+                            <span className="text-gray-500 text-sm">No user</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4">
                           {campaign.tokenAddress ? (
                             <div className="flex items-center space-x-2">
@@ -519,6 +536,7 @@ export default function AdminCampaigns() {
                       <tr>
                         <th className="px-6 py-3">Campaign</th>
                         <th className="px-6 py-3">Source</th>
+                        <th className="px-6 py-3">User</th>
                         <th className="px-6 py-3">Token Address</th>
                         <th className="px-6 py-3">Visits</th>
                         <th className="px-6 py-3">Status</th>
@@ -535,6 +553,18 @@ export default function AdminCampaigns() {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-gray-300">{campaign.utmSource || 'Direct'}</td>
+                          <td className="px-6 py-4">
+                            {campaign.userId ? (
+                              <a 
+                                href={`/admin/users/${campaign.userId}`}
+                                className="text-blue-400 hover:text-blue-300 underline"
+                              >
+                                {campaign.user?.username || `User ${campaign.userId}`}
+                              </a>
+                            ) : (
+                              <span className="text-gray-500 text-sm">No user</span>
+                            )}
+                          </td>
                           <td className="px-6 py-4">
                             {campaign.tokenAddress ? (
                               <div className="flex items-center space-x-2">
