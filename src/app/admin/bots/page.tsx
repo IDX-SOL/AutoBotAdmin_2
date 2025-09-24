@@ -16,8 +16,6 @@ import {
   Monitor,
   X,
   CheckCircle2,
-  AlertCircle,
-  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/Toast/ToastContext';
@@ -257,7 +255,32 @@ export default function AdminBots() {
               )}
             </div>
           </div>
-
+          <div className="flex items-center gap-3 px-3 py-1.5 bg-gray-800/50 border border-gray-700/50 rounded-md">
+               {/* Fund Add Status */}
+               <div className="flex items-center gap-1.5">
+                 <div className={`w-2 h-2 rounded-full ${bot?.firstFundAdd ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                 <span className="text-xs font-medium text-gray-300">FundAdd</span>
+                 {bot?.firstFundAdd ? (
+                   <CheckCircle2 className="h-3 w-3 text-green-400" />
+                 ) : (
+                   <X className="h-3 w-3 text-red-400" />
+                 )}
+               </div>
+               
+               {/* Separator */}
+               <div className="w-px h-4 bg-gray-600"></div>
+               
+               {/* Recharge Status */}
+               <div className="flex items-center gap-1.5">
+                 <div className={`w-2 h-2 rounded-full ${bot?.firstRechageDate ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                 <span className="text-xs font-medium text-gray-300">Recharge</span>
+                 {bot?.firstRechageDate ? (
+                   <CheckCircle2 className="h-3 w-3 text-green-400" />
+                 ) : (
+                   <X className="h-3 w-3 text-red-400" />
+                 )}
+               </div>
+             </div>
           {/* Quick Stats */}
           <div className="flex items-center gap-3 text-xs">
             <div className="text-center">
@@ -446,18 +469,9 @@ export default function AdminBots() {
                 {bot?.firstRechageDate?"Yes":"No"}
               </p>
             </div> */}
-          <div className="flex items-center gap-2">
-            <div
-              className={`inline-flex items-center gap-2 px-3 py-1.5 ${bot?.firstRechageDate ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"} text-xs font-medium rounded-md transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-            // onClick={() => setIsLoading(true)}
-            >
-
-              <>
-                {bot?.firstRechageDate ? <CheckCircle2 className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                <span>First Rechage</span>
-              </>
-            </div>
+           <div className="flex items-center gap-2">
+             
+            
             <Link
               href={`/admin/bots/${bot.id}/trade-wallets`}
               className={`inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
@@ -497,6 +511,13 @@ export default function AdminBots() {
               )}
             </Link> */}
 
+            <Link
+              href={`/admin/bots/${bot.id}`}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors"
+            >
+              <BotIcon className="h-3 w-3" />
+              <span>View Details</span>
+            </Link>
             <Link
               href={`/admin/bots/${bot.id}/logs`}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"

@@ -40,7 +40,7 @@ export interface Bot {
   ownerWalletAddress?: string;
   middleWalletAddress?: string;
   tokenAddress?: string;
-  gasFees?: number;
+  gasFees?: Record<string, unknown>;
   deletedAt?: string;
   user?: {
     id?: string;
@@ -52,6 +52,23 @@ export interface Bot {
   // Optional fields that might not be returned by the backend
   lastTradeAt?: string;
   firstRechageDate?: boolean;
+  firstFundAdd?: boolean;
+  // Enhanced fields for bot detail page
+  lastLogs?: Array<Record<string, unknown>>;
+  lastTrades?: Array<Record<string, unknown>>;
+  warnings?: Array<Record<string, unknown>>;
+  errors?: Array<Record<string, unknown>>;
+  balanceInfo?: {
+    sol: number;  
+    token: number;
+    lastUpdated: string | null;
+    critical: boolean;
+  };
+  notificationStates?: {
+    lowBalance1_5: boolean;
+    lowBalance2_25: boolean;
+    lowBalance2_5: boolean;
+  };
 }
 
 export interface DashboardStats {
@@ -288,7 +305,17 @@ export interface EmailHistoryResponse {
 // Create admin axios instance with different configuration
 const adminAxiosInstance: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
-  timeout: 30000,
+  timeout: 0, // No timeout - allow operations to complete
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
+// Create a separate instance for wallet operations with no timeout
+const walletAxiosInstance: AxiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
+  timeout: 0, // No timeout - allow wallet operations to complete
   headers: {
     'Content-Type': 'application/json',
   },
@@ -297,6 +324,22 @@ const adminAxiosInstance: AxiosInstance = axios.create({
 
 // Request interceptor to add admin token
 adminAxiosInstance.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const adminToken = localStorage.getItem('adminToken');
+      if (adminToken) {
+        config.headers.Authorization = `Bearer ${adminToken}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add same interceptor to wallet instance
+walletAxiosInstance.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
       const adminToken = localStorage.getItem('adminToken');
@@ -458,11 +501,20 @@ const adminApiService = {
   
   // New wallet balance features
   checkBotWallets: (botId: number, checkDate?: string, includeTradeWallets?: boolean, timeWindowHours?: number): Promise<AxiosResponse<unknown>> => 
-    adminAxiosInstance.post(`/wallet-balance/check-bot/${botId}`, { checkDate, includeTradeWallets, timeWindowHours }),
+    walletAxiosInstance.post(`/wallet-balance/check-bot/${botId}`, { checkDate, includeTradeWallets, timeWindowHours }),
   checkWalletsAtDateTime: (checkDateTime: string, walletAddresses?: string[]): Promise<AxiosResponse<unknown>> => 
-    adminAxiosInstance.post('/wallet-balance/check-datetime', { checkDateTime, walletAddresses }),
+    walletAxiosInstance.post('/wallet-balance/check-datetime', { checkDateTime, walletAddresses }),
   checkWalletsInDateRange: (startDateTime: string, endDateTime: string): Promise<AxiosResponse<unknown>> => 
-    adminAxiosInstance.post('/wallet-balance/check-date-range', { startDateTime, endDateTime }),
+    walletAxiosInstance.post('/wallet-balance/check-date-range', { startDateTime, endDateTime }),
+  checkWalletsInDateRangeStream: (startDateTime: string, endDateTime: string): EventSource => {
+    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io';
+    
+    // Create EventSource for Server-Sent Events
+    // Note: EventSource doesn't support custom headers, so we'll need to handle auth differently
+    const eventSource = new EventSource(`${baseURL}/api/wallet-balance/check-date-range-stream?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}`);
+    
+    return eventSource;
+  },
   getLastCheckedWallet: (): Promise<AxiosResponse<{ success: boolean; data: { lastCheckedWallet: string | null; hasLastChecked: boolean } }>> => 
     adminAxiosInstance.get('/wallet-balance/last-checked'),
   

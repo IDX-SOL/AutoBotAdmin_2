@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import adminApiService, { User } from "../../../utils/adminApiService";
 import {
@@ -146,13 +147,17 @@ export default function AdminUsers() {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <button className="p-2 text-gray-400 hover:text-white transition-colors">
+          <Link
+            href={`/admin/users/${user.id}`}
+            className="p-2 text-gray-400 hover:text-white transition-colors"
+            title="View Details"
+          >
             <Eye className="h-4 w-4" />
-          </button>
-          <button className="p-2 text-gray-400 hover:text-white transition-colors">
+          </Link>
+          <button className="p-2 text-gray-400 hover:text-white transition-colors" title="Edit User">
             <Edit className="h-4 w-4" />
           </button>
-          <button className="p-2 text-gray-400 hover:text-red-400 transition-colors">
+          <button className="p-2 text-gray-400 hover:text-red-400 transition-colors" title="Delete User">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -275,9 +280,13 @@ export default function AdminUsers() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
-                    <button className="text-blue-400 hover:text-blue-300 transition-colors p-1">
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className="text-blue-400 hover:text-blue-300 transition-colors p-1"
+                      title="View Details"
+                    >
                       <Eye className="h-4 w-4" />
-                    </button>
+                    </Link>
                     <button className="text-green-400 hover:text-green-300 transition-colors p-1">
                       <Edit className="h-4 w-4" />
                     </button>

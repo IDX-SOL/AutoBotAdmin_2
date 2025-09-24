@@ -55,6 +55,11 @@ export default function WalletBalancesPage() {
     }>;
   } | null>(null);
   const [checkingRange, setCheckingRange] = useState(false);
+  const [checkProgress, setCheckProgress] = useState<{
+    current: number;
+    total: number;
+    message: string;
+  } | null>(null);
 
   // Fetch wallet balances for today
   const fetchTodayBalances = async () => {
@@ -119,7 +124,7 @@ export default function WalletBalancesPage() {
     }
   };
 
-  // Check wallets in date range
+  // Check wallets in date range with streaming
   const checkWalletsInRange = async () => {
     if (!startDateTime || !endDateTime) {
       toast.error('Please select both start and end date/time');
@@ -132,13 +137,61 @@ export default function WalletBalancesPage() {
     }
 
     setCheckingRange(true);
+    setCheckProgress({
+      current: 0,
+      total: 100,
+      message: 'Starting wallet check...'
+    });
+    
     try {
-      const response = await adminApiService.checkWalletsInDateRange(startDateTime, endDateTime);
-      setRangeResults((response.data as { data: typeof rangeResults }).data);
-      toast.success(`Wallet check completed for range: ${new Date(startDateTime).toLocaleString('en-IN')} - ${new Date(endDateTime).toLocaleString('en-IN')}`);
+      // Use streaming API
+      const eventSource = adminApiService.checkWalletsInDateRangeStream(startDateTime, endDateTime);
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === 'connected') {
+            setCheckProgress({
+              current: 0,
+              total: 100,
+              message: 'Connected to wallet check stream...'
+            });
+          } else if (data.type === 'progress') {
+            setCheckProgress({
+              current: data.data.current,
+              total: data.data.total,
+              message: `Processing wallets... ${data.data.processed} checked, ${data.data.withBalance} with balance`
+            });
+          } else if (data.type === 'complete') {
+            setRangeResults(data.data);
+            setCheckProgress(null);
+            toast.success(`Wallet check completed for range: ${new Date(startDateTime).toLocaleString('en-IN')} - ${new Date(endDateTime).toLocaleString('en-IN')}`);
+            eventSource.close();
+          } else if (data.type === 'error') {
+            console.error('Stream error:', data.error);
+            toast.error(`Stream error: ${data.error}`);
+            setCheckProgress(null);
+            eventSource.close();
+          } else if (data.type === 'end') {
+            eventSource.close();
+          }
+        } catch (error) {
+          console.error('Error parsing stream data:', error);
+        }
+      };
+      
+      eventSource.onerror = (error) => {
+        console.error('EventSource error:', error);
+        toast.error('Connection to wallet check stream failed');
+        setCheckProgress(null);
+        eventSource.close();
+      };
+      
     } catch (error) {
-      console.error('Error checking wallets in range:', error);
-      toast.error('Failed to check wallets in date range');
+      console.error('Error starting wallet check stream:', error);
+      setCheckProgress(null);
+      toast.error('Failed to start wallet check stream');
     } finally {
       setCheckingRange(false);
     }
@@ -705,22 +758,38 @@ export default function WalletBalancesPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 mb-6">
-                  <button
-                    onClick={checkWalletsInRange}
-                    disabled={checkingRange}
-                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${checkingRange ? 'animate-spin' : ''}`} />
-                    {checkingRange ? 'Checking...' : 'Check Wallets in Range'}
-                  </button>
-                  <button
-                    onClick={() => setRangeResults(null)}
-                    className="px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors"
-                  >
-                    Clear Results
-                  </button>
-                </div>
+                        <div className="flex gap-4 mb-6">
+                            <button
+                                onClick={checkWalletsInRange}
+                                disabled={checkingRange}
+                                className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
+                            >
+                                <RefreshCw className={`h-4 w-4 ${checkingRange ? 'animate-spin' : ''}`} />
+                                {checkingRange ? 'Checking...' : 'Check Wallets in Range'}
+                            </button>
+                            <button
+                                onClick={() => setRangeResults(null)}
+                                className="px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors"
+                            >
+                                Clear Results
+                            </button>
+                        </div>
+
+                        {/* Progress Indicator */}
+                        {checkProgress && (
+                            <div className="mb-6 p-4 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-blue-300">{checkProgress.message}</span>
+                                    <span className="text-sm text-blue-400">{checkProgress.current}/{checkProgress.total}</span>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-2">
+                                    <div 
+                                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${(checkProgress.current / checkProgress.total) * 100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )}
 
                 {/* Range Results */}
                 {rangeResults && (

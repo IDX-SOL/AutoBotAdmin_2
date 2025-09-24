@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import AdminLayout from '../../../../../components/admin/AdminLayout';
-import adminApiService, { LogEntry, BotLogsResponse } from '../../../../../utils/adminApiService';
+import adminApiService, { LogEntry } from '../../../../../utils/adminApiService';
 
 export default function BotLogsPage() {
   const params = useParams();
@@ -25,7 +25,7 @@ export default function BotLogsPage() {
   } | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -35,12 +35,10 @@ export default function BotLogsPage() {
         ...(selectedDate && { date: selectedDate })
       });
       
-      const data: BotLogsResponse = response.data;
-      
-      if (data.success) {
-        setLogs(data.data.logs);
-        setAvailableDates(data.data.availableDates);
-        setSummary(data.data.summary);
+      if (response.data.success) {
+        setLogs(response.data.data.logs);
+        setAvailableDates(response.data.data.availableDates);
+        setSummary(response.data.data.summary);
         setError(null);
       } else {
         throw new Error('Failed to fetch logs');
@@ -51,11 +49,11 @@ export default function BotLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [botId, logType, selectedDate]);
 
   useEffect(() => {
     fetchLogs();
-  }, [botId, logType, selectedDate]);
+  }, [fetchLogs]);
 
   // Auto refresh effect
   useEffect(() => {
@@ -63,7 +61,7 @@ export default function BotLogsPage() {
 
     const interval = setInterval(fetchLogs, 5000); // Refresh every 5 seconds
     return () => clearInterval(interval);
-  }, [autoRefresh, botId, logType, selectedDate]);
+  }, [autoRefresh, fetchLogs]);
 
   const getLevelColor = (level: string) => {
     switch (level) {

@@ -10,7 +10,10 @@ import {
   Eye, 
   Target, 
   Download,
-  Search
+  Search,
+  Coins,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 
 interface Campaign {
@@ -43,6 +46,7 @@ interface Campaign {
   firstVisit: string;
   lastVisit: string;
   visitCount: number;
+  tokenAddress?: string; // New field for token address tracking
   conversionEvents: Array<{
     type: string;
     data: Record<string, unknown>;
@@ -54,6 +58,10 @@ interface Campaign {
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  user?: {
+    username: string;
+    email: string;
+  };
 }
 
 export default function AdminCampaigns() {
@@ -70,6 +78,7 @@ export default function AdminCampaigns() {
     { id: 'campaigns', name: 'Campaign List', icon: Users },
     { id: 'conversions', name: 'Conversions', icon: Target },
     { id: 'sources', name: 'Traffic Sources', icon: TrendingUp },
+    { id: 'tokens', name: 'Token Analytics', icon: Coins },
   ];
 
   const dateRanges = [
@@ -86,6 +95,7 @@ export default function AdminCampaigns() {
     { value: 'direct', label: 'Direct Traffic' },
     { value: 'converted', label: 'Converted' },
     { value: 'active', label: 'Active' },
+    { value: 'with_tokens', label: 'With Token Addresses' },
   ];
 
   const filterCampaigns = useCallback(() => {
@@ -117,6 +127,9 @@ export default function AdminCampaigns() {
           break;
         case 'active':
           filtered = filtered.filter(c => c.visitCount > 1);
+          break;
+        case 'with_tokens':
+          filtered = filtered.filter(c => c.tokenAddress);
           break;
       }
     }
@@ -199,6 +212,34 @@ export default function AdminCampaigns() {
   }
 
   const stats = getCampaignStats();
+
+  // Utility functions
+  const formatTokenAddress = (address: string) => {
+    if (!address) return 'N/A';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
+
+  const getTokenAnalytics = () => {
+    const campaignsWithTokens = campaigns.filter(c => c.tokenAddress);
+    const convertedWithTokens = campaignsWithTokens.filter(c => c.isConverted);
+    
+    return {
+      totalWithTokens: campaignsWithTokens.length,
+      convertedWithTokens: convertedWithTokens.length,
+      tokenConversionRate: campaignsWithTokens.length > 0 
+        ? ((convertedWithTokens.length / campaignsWithTokens.length) * 100).toFixed(1)
+        : 0
+    };
+  };
 
   return (
     <AdminLayout>
@@ -356,6 +397,8 @@ export default function AdminCampaigns() {
                       <th className="px-6 py-3">Campaign</th>
                       <th className="px-6 py-3">Source</th>
                       <th className="px-6 py-3">Medium</th>
+                      <th className="px-6 py-3">User</th>
+                      <th className="px-6 py-3">Token Address</th>
                       <th className="px-6 py-3">Visits</th>
                       <th className="px-6 py-3">Status</th>
                       <th className="px-6 py-3">Created</th>
@@ -373,6 +416,36 @@ export default function AdminCampaigns() {
                         </td>
                         <td className="px-6 py-4 text-gray-300">{campaign.utmSource || 'Direct'}</td>
                         <td className="px-6 py-4 text-gray-300">{campaign.utmMedium || 'None'}</td>
+                        <td className="px-6 py-4">
+                          {campaign.userId ? (
+                            <a 
+                              href={`/admin/users/${campaign.userId}`}
+                              className="text-blue-400 hover:text-blue-300 underline"
+                            >
+                              {campaign.user?.username || `User ${campaign.userId}`}
+                            </a>
+                          ) : (
+                            <span className="text-gray-500 text-sm">No user</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {campaign.tokenAddress ? (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-white font-mono text-sm">
+                                {formatTokenAddress(campaign.tokenAddress)}
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(campaign.tokenAddress!)}
+                                className="text-gray-400 hover:text-gray-300"
+                                title="Copy full address"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-sm">No token</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-gray-300">{campaign.visitCount}</td>
                         <td className="px-6 py-4">
                           <span className={`px-2 py-1 rounded-full text-xs ${
@@ -411,6 +484,134 @@ export default function AdminCampaigns() {
               <h3 className="text-lg font-semibold text-white mb-4">Traffic Sources</h3>
               <p className="text-gray-400">Traffic sources component will be implemented here</p>
             </div>
+          )}
+
+          {activeTab === 'tokens' && (
+            <>
+              {/* Token Analytics Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-indigo-600 rounded-lg">
+                      <Coins className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-400">Campaigns with Tokens</p>
+                      <p className="text-2xl font-bold text-white">{getTokenAnalytics().totalWithTokens}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-green-600 rounded-lg">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-400">Converted with Tokens</p>
+                      <p className="text-2xl font-bold text-white">{getTokenAnalytics().convertedWithTokens}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-blue-600 rounded-lg">
+                      <TrendingUp className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-400">Token Conversion Rate</p>
+                      <p className="text-2xl font-bold text-white">{getTokenAnalytics().tokenConversionRate}%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campaigns with Token Addresses */}
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4">Campaigns with Token Addresses</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-gray-300">
+                    <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">
+                      <tr>
+                        <th className="px-6 py-3">Campaign</th>
+                        <th className="px-6 py-3">Source</th>
+                        <th className="px-6 py-3">User</th>
+                        <th className="px-6 py-3">Token Address</th>
+                        <th className="px-6 py-3">Visits</th>
+                        <th className="px-6 py-3">Status</th>
+                        <th className="px-6 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {filteredCampaigns.map((campaign) => (
+                        <tr key={campaign.id} className="hover:bg-gray-700/50">
+                          <td className="px-6 py-4">
+                            <div>
+                              <p className="text-white font-medium">{campaign.utmCampaign}</p>
+                              <p className="text-gray-400 text-xs">{campaign.utmCampaignId}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-300">{campaign.utmSource || 'Direct'}</td>
+                          <td className="px-6 py-4">
+                            {campaign.userId ? (
+                              <a 
+                                href={`/admin/users/${campaign.userId}`}
+                                className="text-blue-400 hover:text-blue-300 underline"
+                              >
+                                {campaign.user?.username || `User ${campaign.userId}`}
+                              </a>
+                            ) : (
+                              <span className="text-gray-500 text-sm">No user</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            {campaign.tokenAddress ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-white font-mono text-sm">
+                                  {formatTokenAddress(campaign.tokenAddress)}
+                                </span>
+                                <button
+                                  onClick={() => copyToClipboard(campaign.tokenAddress!)}
+                                  className="text-gray-400 hover:text-gray-300"
+                                  title="Copy full address"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 text-sm">No token</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-gray-300">{campaign.visitCount}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              campaign.isConverted 
+                                ? 'bg-green-600 text-white' 
+                                : 'bg-gray-600 text-gray-300'
+                            }`}>
+                              {campaign.isConverted ? 'Converted' : 'Active'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button 
+                              onClick={() => copyToClipboard(campaign.tokenAddress!)}
+                              className="text-blue-400 hover:text-blue-300 mr-2"
+                              title="Copy token address"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </button>
+                            <button className="text-gray-400 hover:text-gray-300">
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
