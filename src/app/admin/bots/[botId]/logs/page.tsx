@@ -24,6 +24,12 @@ export default function BotLogsPage() {
     } | null;
   } | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalLogs, setTotalLogs] = useState(0);
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -31,7 +37,8 @@ export default function BotLogsPage() {
       
       const response = await adminApiService.getBotLogs(botId, {
         type: logType,
-        limit: 10000,
+        limit: pageSize,
+        page: currentPage,
         ...(selectedDate && { date: selectedDate })
       });
       
@@ -39,6 +46,8 @@ export default function BotLogsPage() {
         setLogs(response.data.data.logs);
         setAvailableDates(response.data.data.availableDates);
         setSummary(response.data.data.summary);
+        setTotalLogs(response.data.data.total || response.data.data.logs.length);
+        setTotalPages(Math.ceil((response.data.data.total || response.data.data.logs.length) / pageSize));
         setError(null);
       } else {
         throw new Error('Failed to fetch logs');
@@ -49,7 +58,7 @@ export default function BotLogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [botId, logType, selectedDate]);
+  }, [botId, logType, selectedDate, currentPage, pageSize]);
 
   useEffect(() => {
     fetchLogs();
@@ -93,10 +102,33 @@ export default function BotLogsPage() {
     
     try {
       await adminApiService.clearBotLogs(botId);
+      setCurrentPage(1); // Reset to first page
       fetchLogs(); // Refresh the logs
     } catch (err) {
       console.error('Error clearing logs:', err);
       setError(err instanceof Error ? err.message : 'Failed to clear logs');
+    }
+  };
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -177,6 +209,20 @@ export default function BotLogsPage() {
                 ))}
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Rows per page</label>
+              <select
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+                <option value={500}>500</option>
+              </select>
+            </div>
             {summary && (
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <span>Total: {summary.total}</span>
@@ -205,9 +251,14 @@ export default function BotLogsPage() {
         {/* Logs List */}
         <div className="bg-gray-800 rounded-xl border border-gray-700">
           <div className="px-6 py-4 border-b border-gray-700">
-            <h2 className="text-lg font-medium text-white">
-              Logs ({logs.length})
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-medium text-white">
+                Logs ({totalLogs} total)
+              </h2>
+              <div className="text-sm text-gray-400">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalLogs)} of {totalLogs}
+              </div>
+            </div>
           </div>
           
           <div className="divide-y divide-gray-700 max-h-96 overflow-y-auto">
@@ -294,6 +345,72 @@ export default function BotLogsPage() {
             )}
           </div>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    currentPage === 1
+                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-700 text-white hover:bg-gray-600'
+                  }`}
+                >
+                  Previous
+                </button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-2 rounded-md text-sm font-medium ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-white hover:bg-gray-600'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    currentPage === totalPages
+                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-700 text-white hover:bg-gray-600'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+              
+              <div className="text-sm text-gray-400">
+                Page {currentPage} of {totalPages}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

@@ -418,7 +418,7 @@ const adminApiService = {
     adminAxiosInstance.post(`/admin/bots/${botId}/restore`),
   
   // Bot logs management
-  getBotLogs: (botId: string, params?: { type?: string; limit?: number; date?: string }): Promise<AxiosResponse<BotLogsResponse>> => 
+  getBotLogs: (botId: string, params?: { type?: string; limit?: number; date?: string; page?: number }): Promise<AxiosResponse<BotLogsResponse>> => 
     adminAxiosInstance.get(`/admin/bots/${botId}/logs`, { params }),
   clearBotLogs: (botId: string): Promise<AxiosResponse<void>> => 
     adminAxiosInstance.delete(`/admin/bots/${botId}/logs`),
