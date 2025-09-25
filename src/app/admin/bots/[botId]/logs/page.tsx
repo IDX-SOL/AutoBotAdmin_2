@@ -30,6 +30,7 @@ export default function BotLogsPage() {
   const [pageSize, setPageSize] = useState(50);
   const [totalPages, setTotalPages] = useState(0);
   const [totalLogs, setTotalLogs] = useState(0);
+  const [pageInput, setPageInput] = useState('');
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -46,8 +47,8 @@ export default function BotLogsPage() {
         setLogs(response.data.data.logs);
         setAvailableDates(response.data.data.availableDates);
         setSummary(response.data.data.summary);
-        setTotalLogs(response.data.data.total || response.data.data.logs.length);
-        setTotalPages(Math.ceil((response.data.data.total || response.data.data.logs.length) / pageSize));
+        setTotalLogs(response.data.data.total);
+        setTotalPages(response.data.data.totalPages || Math.ceil(response.data.data.total / pageSize));
         setError(null);
       } else {
         throw new Error('Failed to fetch logs');
@@ -129,6 +130,19 @@ export default function BotLogsPage() {
   const goToPreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageInput(e.target.value);
+  };
+
+  const handlePageInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const page = parseInt(pageInput);
+    if (!isNaN(page) && page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setPageInput('');
     }
   };
 
@@ -405,8 +419,33 @@ export default function BotLogsPage() {
                 </button>
               </div>
               
-              <div className="text-sm text-gray-400">
-                Page {currentPage} of {totalPages}
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-400">
+                  Page {currentPage} of {totalPages}
+                </div>
+                
+                {/* Direct page input */}
+                <form onSubmit={handlePageInputSubmit} className="flex items-center space-x-2">
+                  <label htmlFor="pageInput" className="text-sm text-gray-400">
+                    Go to:
+                  </label>
+                  <input
+                    id="pageInput"
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={pageInput}
+                    onChange={handlePageInputChange}
+                    placeholder="Page"
+                    className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+                  >
+                    Go
+                  </button>
+                </form>
               </div>
             </div>
           </div>

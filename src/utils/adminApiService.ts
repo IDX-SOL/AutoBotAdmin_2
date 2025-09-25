@@ -237,6 +237,9 @@ export interface BotLogsResponse {
   data: {
     logs: LogEntry[];
     total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
     botId: number;
     logType: string;
     availableDates: string[];
