@@ -31,7 +31,7 @@ export default function BotLogsPage() {
       
       const response = await adminApiService.getBotLogs(botId, {
         type: logType,
-        // limit: 200,
+        limit: 10000,
         ...(selectedDate && { date: selectedDate })
       });
       
