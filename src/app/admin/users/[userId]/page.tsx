@@ -30,7 +30,7 @@ interface UserDetailData extends User {
   totalBots?: number;
   runningBots?: number;
   stoppedBots?: number;
-  errorBots?: number;
+  refundedBots?: number;
   bots?: Array<{
     id: string;
     botName?: string;
@@ -155,12 +155,12 @@ export default function UserDetailPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link
+            {/* <Link
               href="/admin/users"
               className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="h-5 w-5 text-gray-400" />
-            </Link>
+            </Link> */}
             <div>
               <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                 <UserIcon className="h-8 w-8 text-blue-400" />
@@ -214,8 +214,8 @@ export default function UserDetailPage() {
                 <AlertTriangle className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-400">Error Bots</p>
-                <p className="text-xl font-bold text-white">{user.errorBots || 0}</p>
+                <p className="text-sm font-medium text-gray-400">Refunded Bots</p>
+                <p className="text-xl font-bold text-white">{user.refundedBots || 0}</p>
               </div>
             </div>
           </div>
@@ -373,8 +373,8 @@ export default function UserDetailPage() {
                       <p className="text-xl font-bold text-orange-400">{user.stoppedBots || 0}</p>
                     </div>
                     <div className="text-center p-4 bg-gray-600/50 rounded-lg">
-                      <p className="text-sm text-gray-400 mb-1">Errors</p>
-                      <p className="text-xl font-bold text-red-400">{user.errorBots || 0}</p>
+                      <p className="text-sm text-gray-400 mb-1">Refunded</p>
+                      <p className="text-xl font-bold text-red-400">{user.refundedBots || 0}</p>
                     </div>
                   </div>
                 </div>

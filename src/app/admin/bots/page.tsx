@@ -231,9 +231,9 @@ export default function AdminBots() {
                 </h3>
                 {getStatusBadge(bot.status)}
               </div>
-              <p className="text-xs text-gray-400 truncate max-w-40">
+              <Link href={`/admin/users/${bot.user?.id}`} className="text-xs text-blue-400 truncate max-w-40">
                 {bot.user?.email || 'No description'}
-              </p>
+              </Link>
               {(bot.user?.platform || bot.user?.device) && (
                 <div className="flex items-center gap-2 mt-1">
                   {bot.user?.platform && (
