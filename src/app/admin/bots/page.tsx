@@ -42,7 +42,35 @@ export default function AdminBots() {
     totalPages: 1
   });
   const [isBulkOperating, setIsBulkOperating] = useState(false);
-  const [operatingBots, setOperatingBots] = useState<Set<string>>(new Set());
+  const [responseDetails, setResponseDetails] = useState<Array<{
+    message: string;
+    botId: string;
+    botName?: string;
+    tokenAddress: string;
+    engine: string;
+    ownerWalletAddress: string;
+    status: string;
+    createdAt?: string;
+    updatedAt?: string;
+    lastLogs?: Array<{ timestamp: string; message: string }>;
+    lastTrades?: Array<{
+      id: string;
+      timestamp: string;
+      tradeType: string;
+      amount: number;
+      token: string;
+      transactionSignature?: string;
+    }>;
+    tokenName?: string;
+    tokenSymbol?: string;
+    user?: {
+      id: string;
+      username: string;
+      email: string;
+    };
+  }>>([]);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [responseTitle, setResponseTitle] = useState('');
   const { showSuccess, showError } = useToast();
 
   const fetchBots = useCallback(async () => {
@@ -154,8 +182,13 @@ export default function AdminBots() {
 
     setIsBulkOperating(true);
     try {
-      await adminApiService.stopRunningBot();
-      showSuccess('All running bots stopped successfully');
+      const response = await adminApiService.stopRunningBot();
+      const { message, botstoppedData } = response.data;
+      
+      showSuccess(message);
+      setResponseDetails(botstoppedData || []);
+      setResponseTitle('Bot Stop Results');
+      setShowResponseModal(true);
       fetchBots(); // Refresh the list
     } catch (error) {
       console.error('Error stopping bots:', error);
@@ -174,8 +207,13 @@ export default function AdminBots() {
 
     setIsBulkOperating(true);
     try {
-      await adminApiService.startRunningBot();
-      showSuccess('All stopped bots started successfully');
+      const response = await adminApiService.startRunningBot();
+      const { message, botstartedData } = response.data;
+      
+      showSuccess(message);
+      setResponseDetails(botstartedData || []);
+      setResponseTitle('Bot Start Results');
+      setShowResponseModal(true);
       fetchBots(); // Refresh the list
     } catch (error) {
       console.error('Error starting bots:', error);
@@ -185,53 +223,6 @@ export default function AdminBots() {
     }
   };
 
-  const handleStopIndividualBot = async (botId: string, botName?: string) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to stop the bot "${botName || 'this bot'}"?`
-    );
-
-    if (!confirmed) return;
-
-    setOperatingBots(prev => new Set(prev).add(botId));
-    try {
-      await adminApiService.stopIndividualBot(botId);
-      showSuccess('Bot stopped successfully');
-      fetchBots(); // Refresh the list
-    } catch (error) {
-      console.error('Error stopping bot:', error);
-      showError('Failed to stop bot');
-    } finally {
-      setOperatingBots(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(botId);
-        return newSet;
-      });
-    }
-  };
-
-  const handleStartIndividualBot = async (botId: string, botName?: string) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to start the bot "${botName || 'this bot'}"?`
-    );
-
-    if (!confirmed) return;
-
-    setOperatingBots(prev => new Set(prev).add(botId));
-    try {
-      await adminApiService.startIndividualBot(botId);
-      showSuccess('Bot started successfully');
-      fetchBots(); // Refresh the list
-    } catch (error) {
-      console.error('Error starting bot:', error);
-      showError('Failed to start bot');
-    } finally {
-      setOperatingBots(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(botId);
-        return newSet;
-      });
-    }
-  };
 
   // const getStatusColor = (status: string | undefined) => {
   //   if (!status) return "bg-gray-500/20 text-gray-400";
@@ -813,6 +804,116 @@ export default function AdminBots() {
         {bots.length > 0 && (
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
             <Pagination />
+          </div>
+        )}
+
+        {/* Response Details Modal */}
+        {showResponseModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-white">{responseTitle}</h3>
+                <button
+                  onClick={() => setShowResponseModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {responseDetails.length > 0 ? (
+                  responseDetails.map((bot, index) => (
+                    <div key={index} className="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-lg font-medium text-white">
+                          {bot.botName || `Bot ${bot.botId}`}
+                        </h4>
+                        <span className={`px-2 py-1 rounded text-sm ${
+                          bot.message.includes('successfully') 
+                            ? 'bg-green-900 text-green-300' 
+                            : 'bg-red-900 text-red-300'
+                        }`}>
+                          {bot.message.includes('successfully') ? 'Success' : 'Failed'}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-400">Bot ID:</p>
+                          <p className="text-white font-mono">{bot.botId}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Token Address:</p>
+                          <p className="text-white font-mono text-xs break-all">{bot.tokenAddress}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Engine:</p>
+                          <p className="text-white">{bot.engine}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Status:</p>
+                          <p className="text-white">{bot.status}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Token Name:</p>
+                          <p className="text-white">{bot.tokenName || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Token Symbol:</p>
+                          <p className="text-white">{bot.tokenSymbol || 'N/A'}</p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <p className="text-gray-400">Owner Wallet:</p>
+                          <p className="text-white font-mono text-xs break-all">{bot.ownerWalletAddress}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Created:</p>
+                          <p className="text-white">
+                            {bot.createdAt ? new Date(bot.createdAt).toLocaleString() : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400">Updated:</p>
+                          <p className="text-white">
+                            {bot.updatedAt ? new Date(bot.updatedAt).toLocaleString() : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {bot.lastLogs && bot.lastLogs.length > 0 && (
+                        <div className="mt-4">
+                          <p className="text-gray-400 mb-2">Recent Logs:</p>
+                          <div className="bg-gray-600 rounded p-2 max-h-32 overflow-y-auto">
+                            {bot.lastLogs.slice(-3).map((log: { timestamp: string; message: string }, logIndex: number) => (
+                              <div key={logIndex} className="text-xs text-gray-300 mb-1">
+                                <span className="text-gray-500">
+                                  {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}:
+                                </span>
+                                <span className="ml-2">{log.message}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400">No bot data available</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowResponseModal(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
