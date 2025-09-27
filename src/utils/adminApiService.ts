@@ -426,6 +426,16 @@ const adminApiService = {
   clearBotLogs: (botId: string): Promise<AxiosResponse<void>> => 
     adminAxiosInstance.delete(`/admin/bots/${botId}/logs`),
   
+  // Bot control management
+  stopRunningBot: (): Promise<AxiosResponse<{ message: string }>> => 
+    adminAxiosInstance.post('/admin/bots/stop-running'),
+  startRunningBot: (): Promise<AxiosResponse<{ message: string }>> => 
+    adminAxiosInstance.post('/admin/bots/start-running'),
+  stopIndividualBot: (botId: string): Promise<AxiosResponse<{ message: string }>> => 
+    adminAxiosInstance.post(`/admin/bots/${botId}/stop`),
+  startIndividualBot: (botId: string): Promise<AxiosResponse<{ message: string }>> => 
+    adminAxiosInstance.post(`/admin/bots/${botId}/start`),
+  
   // Analytics and reports
   getAnalytics: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get('/admin/analytics', { params }),

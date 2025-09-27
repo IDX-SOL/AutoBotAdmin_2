@@ -16,6 +16,9 @@ import {
   Monitor,
   X,
   CheckCircle2,
+  Play,
+  Square,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/Toast/ToastContext';
@@ -38,6 +41,8 @@ export default function AdminBots() {
     total: 0,
     totalPages: 1
   });
+  const [isBulkOperating, setIsBulkOperating] = useState(false);
+  const [operatingBots, setOperatingBots] = useState<Set<string>>(new Set());
   const { showSuccess, showError } = useToast();
 
   const fetchBots = useCallback(async () => {
@@ -137,6 +142,94 @@ export default function AdminBots() {
       // Show error notification
       const errorMessage = err instanceof Error ? err.message : "Failed to delete bot";
       showError(`Error: ${errorMessage}`);
+    }
+  };
+
+  const handleStopAllBots = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to stop all running bots? This action will stop all currently running bots.'
+    );
+
+    if (!confirmed) return;
+
+    setIsBulkOperating(true);
+    try {
+      await adminApiService.stopRunningBot();
+      showSuccess('All running bots stopped successfully');
+      fetchBots(); // Refresh the list
+    } catch (error) {
+      console.error('Error stopping bots:', error);
+      showError('Failed to stop bots');
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  const handleStartAllBots = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to start all stopped bots? This action will start all bots that were stopped by admin.'
+    );
+
+    if (!confirmed) return;
+
+    setIsBulkOperating(true);
+    try {
+      await adminApiService.startRunningBot();
+      showSuccess('All stopped bots started successfully');
+      fetchBots(); // Refresh the list
+    } catch (error) {
+      console.error('Error starting bots:', error);
+      showError('Failed to start bots');
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  const handleStopIndividualBot = async (botId: string, botName?: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to stop the bot "${botName || 'this bot'}"?`
+    );
+
+    if (!confirmed) return;
+
+    setOperatingBots(prev => new Set(prev).add(botId));
+    try {
+      await adminApiService.stopIndividualBot(botId);
+      showSuccess('Bot stopped successfully');
+      fetchBots(); // Refresh the list
+    } catch (error) {
+      console.error('Error stopping bot:', error);
+      showError('Failed to stop bot');
+    } finally {
+      setOperatingBots(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(botId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleStartIndividualBot = async (botId: string, botName?: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to start the bot "${botName || 'this bot'}"?`
+    );
+
+    if (!confirmed) return;
+
+    setOperatingBots(prev => new Set(prev).add(botId));
+    try {
+      await adminApiService.startIndividualBot(botId);
+      showSuccess('Bot started successfully');
+      fetchBots(); // Refresh the list
+    } catch (error) {
+      console.error('Error starting bot:', error);
+      showError('Failed to start bot');
+    } finally {
+      setOperatingBots(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(botId);
+        return newSet;
+      });
     }
   };
 
@@ -511,6 +604,36 @@ export default function AdminBots() {
               )}
             </Link> */}
 
+            {/* {bot.status === 'running' && (
+              <button
+                onClick={() => handleStopIndividualBot(bot.id, bot.botName)}
+                disabled={operatingBots.has(bot.id)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors"
+              >
+                {operatingBots.has(bot.id) ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Square className="h-3 w-3" />
+                )}
+                <span>Stop</span>
+              </button>
+            )}
+            
+            {(bot.status === 'stopped' || bot.status === 'paused') && (
+              <button
+                onClick={() => handleStartIndividualBot(bot.id, bot.botName)}
+                disabled={operatingBots.has(bot.id)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors"
+              >
+                {operatingBots.has(bot.id) ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Play className="h-3 w-3" />
+                )}
+                <span>Start</span>
+              </button>
+            )} */}
+
             <Link
               href={`/admin/bots/${bot.id}`}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors"
@@ -597,6 +720,34 @@ export default function AdminBots() {
             <span className="text-sm text-gray-400">
               Total: {pagination.total || 0} bots
             </span>
+            
+            {/* Bulk Control Buttons */}
+            <button
+              onClick={handleStopAllBots}
+              disabled={isBulkOperating}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+            >
+              {isBulkOperating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
+              <span>Stop All Running</span>
+            </button>
+            
+            <button
+              onClick={handleStartAllBots}
+              disabled={isBulkOperating}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+            >
+              {isBulkOperating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+              <span>Start All Stopped</span>
+            </button>
+            
             <Link
               href="/admin/bots/logs"
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
