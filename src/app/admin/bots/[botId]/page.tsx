@@ -42,8 +42,15 @@ interface LogEntry {
 }
 
 interface TradeEntry {
+  id: string;
   timestamp: string;
-  [key: string]: unknown;
+  tradeType: 'buy' | 'sell';
+  amount: number;
+  token: string;
+  price?: number;
+  transactionSignature?: string;
+  status?: string;
+  metadata?: Record<string, unknown>;
 }
 
 interface WarningEntry {

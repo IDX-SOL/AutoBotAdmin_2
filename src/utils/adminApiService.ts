@@ -54,8 +54,23 @@ export interface Bot {
   firstRechageDate?: boolean;
   firstFundAdd?: boolean;
   // Enhanced fields for bot detail page
-  lastLogs?: Array<Record<string, unknown>>;
-  lastTrades?: Array<Record<string, unknown>>;
+  lastLogs?: Array<{
+    timestamp: string;
+    message: string;
+    level?: string;
+    metadata?: Record<string, unknown>;
+  }>;
+  lastTrades?: Array<{
+    id: string;
+    timestamp: string;
+    tradeType: 'buy' | 'sell';
+    amount: number;
+    token: string;
+    price?: number;
+    transactionSignature?: string;
+    status?: string;
+    metadata?: Record<string, unknown>;
+  }>;
   warnings?: Array<Record<string, unknown>>;
   errors?: Array<Record<string, unknown>>;
   balanceInfo?: {
@@ -409,6 +424,14 @@ const adminApiService = {
   // Bots management
   getBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<BotsResponse>> =>
     adminAxiosInstance.get('/admin/bots', { params }),
+  getBotsWithLastLogs: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<BotsResponse>> => {
+    const queryParams = typeof params === 'object' && params !== null ? { ...params, includeLastLogs: true } : { includeLastLogs: true };
+    return adminAxiosInstance.get('/admin/bots', { params: queryParams });
+  },
+  getBotsWithLastData: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<BotsResponse>> => {
+    const queryParams = typeof params === 'object' && params !== null ? { ...params, includeLastLogs: true, includeLastTrades: true } : { includeLastLogs: true, includeLastTrades: true };
+    return adminAxiosInstance.get('/admin/bots', { params: queryParams });
+  },
   getBot: (botId: string): Promise<AxiosResponse<Bot>> =>
     adminAxiosInstance.get(`/admin/bots/${botId}`),
   updateBot: (botId: string, botData: Partial<Bot>): Promise<AxiosResponse<Bot>> =>
@@ -423,6 +446,10 @@ const adminApiService = {
   // Bot logs management
   getBotLogs: (botId: string, params?: { type?: string; limit?: number; date?: string; page?: number }): Promise<AxiosResponse<BotLogsResponse>> =>
     adminAxiosInstance.get(`/admin/bots/${botId}/logs`, { params }),
+  getBotLastLogs: (botId: string, limit: number = 5): Promise<AxiosResponse<{ success: boolean; logs: Array<{ timestamp: string; message: string; level?: string; metadata?: Record<string, unknown> }> }>> =>
+    adminAxiosInstance.get(`/admin/bots/${botId}/logs/last`, { params: { limit } }),
+  getBotLastTrades: (botId: string, limit: number = 5): Promise<AxiosResponse<{ success: boolean; trades: Array<{ id: string; timestamp: string; tradeType: 'buy' | 'sell'; amount: number; token: string; price?: number; transactionSignature?: string; status?: string; metadata?: Record<string, unknown> }> }>> =>
+    adminAxiosInstance.get(`/admin/bots/${botId}/trades/last`, { params: { limit } }),
   clearBotLogs: (botId: string): Promise<AxiosResponse<void>> =>
     adminAxiosInstance.delete(`/admin/bots/${botId}/logs`),
 
