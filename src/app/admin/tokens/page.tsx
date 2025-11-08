@@ -180,6 +180,56 @@ export default function AdminTokens() {
     return `$${numValue.toFixed(2)}`;
   };
 
+  const exportTokens = (format: 'csv' | 'excel' = 'csv') => {
+    if (filteredTokens.length === 0) {
+      alert('No tokens to export');
+      return;
+    }
+
+    const headers = [
+      'Token Name',
+      'Token Symbol', 
+      'Token Address',
+      'Price',
+      'Price USD',
+      'Market Cap',
+      'Volume 24h',
+      'Liquidity',
+      'DEX ID',
+      'Pair Address',
+      'Created At',
+      'Updated At'
+    ];
+
+    const csvData = [
+      headers.join(','),
+      ...filteredTokens.map(token => [
+        `"${token.tokenName || ''}"`,
+        `"${token.tokenSymbol || ''}"`,
+        `"${token.tokenAddress || ''}"`,
+        `"${token.price || ''}"`,
+        token.priceUsd || '',
+        token.marketCap || '',
+        token.volume24h || '',
+        token.liquidity || '',
+        `"${token.dexId || ''}"`,
+        `"${token.pairAddress || ''}"`,
+        `"${new Date(token.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}"`,
+        `"${new Date(token.updatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `tokens_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -239,9 +289,12 @@ export default function AdminTokens() {
                   className="bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+              <button 
+                onClick={() => exportTokens('csv')} 
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              >
                 <Download className="h-4 w-4" />
-                <span>Export</span>
+                <span>Export CSV</span>
               </button>
             </div>
           </div>
