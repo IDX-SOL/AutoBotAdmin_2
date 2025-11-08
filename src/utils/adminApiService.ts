@@ -228,6 +228,42 @@ export interface EmailJobResponse {
   timestamp: string;
   results?: Array<{ job: string; status: string; error?: string }>;
 }
+// Holder Bot types
+export interface HolderBot {
+  id: number;
+  userId?: number | null;
+  ownerWalletAddress: string;
+  mintAddress: string;
+  perHolderTokenAmount?: number;
+  holdersProcessed?: number;
+  totalSolSpent?: number;
+  totalTokenTransferred?: number;
+  tokenName?: string;
+  tokenSymbol?: string;
+  status?: string;
+  lastHolderWalletIndex?: number;
+  botName?: string;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id?: number;
+    username?: string;
+    email?: string;
+    platform?: string;
+    device?: string;
+  };
+}
+
+export interface HolderBotsResponse {
+  bots: HolderBot[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export interface WelcomeEmailResponse {
   success: boolean;
@@ -578,7 +614,9 @@ const adminApiService = {
     adminAxiosInstance.put(`/admin/emails/templates/${templateId}`, template),
   deleteEmailTemplate: (templateId: number): Promise<AxiosResponse<{ success: boolean; message: string }>> =>
     adminAxiosInstance.delete(`/admin/emails/templates/${templateId}`),
-
+ // Holder Bots management
+ getHolderBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<HolderBotsResponse>> =>
+  adminAxiosInstance.get('/admin/holder-bots', { params }),
   // Wallet Balance Management
   getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> =>
     adminAxiosInstance.get('/wallet-balance/today'),
