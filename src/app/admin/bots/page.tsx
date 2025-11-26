@@ -298,38 +298,35 @@ export default function AdminBots() {
     };
 
     return (
-      <div className="bg-gray-800/80 rounded-xl p-4 sm:p-6 border border-gray-700/50 hover:border-gray-600/60 transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/20 hover:scale-[1.01] group">
-        {/* Header Section - Enhanced Layout */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+      <div className="bg-gray-800/80 rounded-lg p-3 border border-gray-700/50 hover:border-gray-600/60 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20 group">
+        {/* Header Section - Optimized Layout */}
+        <div className="flex items-center justify-between gap-3 mb-3">
           {/* Bot Info */}
-          <div className="flex items-start gap-4 min-w-0 flex-1">
-            <div className="h-14 w-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-green-500/20">
-              <BotIcon className="h-7 w-7 text-white" />
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0 ring-1 ring-green-500/20">
+              <BotIcon className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-                <h3 className="text-xl font-bold text-white truncate">
-                  {bot.botName || "Unnamed Bot"}
-                </h3>
-
-              </div>
-              <Link href={`/admin/users/${bot.user?.id}`} className="text-sm text-blue-400 truncate block hover:text-blue-300 transition-colors mb-3 group">
-                <span className="group-hover:underline">{bot.user?.email || 'No description'}</span>
+              <h3 className="text-lg font-bold text-white truncate">
+                {bot.botName || "Unnamed Bot"}
+              </h3>
+              <Link href={`/admin/users/${bot.user?.id}`} className="text-xs text-blue-400 truncate block hover:text-blue-300 transition-colors">
+                <span className="hover:underline">{bot.user?.email || 'No description'}</span>
               </Link>
               {(bot.user?.platform || bot.user?.device) && (
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1 flex-wrap mt-1">
                   {bot.user?.platform && (
-                    <span className="text-xs text-gray-400 flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-700/40 rounded-lg border border-gray-600/30">
+                    <span className="text-xs text-gray-400 flex items-center gap-1 px-1.5 py-0.5 bg-gray-700/40 rounded border border-gray-600/30">
                       {bot.user.platform === 'mobile' ? (
-                        <Smartphone className="h-3.5 w-3.5 text-blue-400" />
+                        <Smartphone className="h-3 w-3 text-blue-400" />
                       ) : (
-                        <Monitor className="h-3.5 w-3.5 text-purple-400" />
+                        <Monitor className="h-3 w-3 text-purple-400" />
                       )}
                       <span className="font-medium">{bot.user.platform}</span>
                     </span>
                   )}
                   {bot.user?.device && (
-                    <span className="text-xs text-gray-400 px-2.5 py-1.5 bg-gray-700/40 rounded-lg border border-gray-600/30 font-medium">
+                    <span className="text-xs text-gray-400 px-1.5 py-0.5 bg-gray-700/40 rounded border border-gray-600/30 font-medium">
                       {bot.user.device}
                     </span>
                   )}
@@ -338,80 +335,62 @@ export default function AdminBots() {
             </div>
           </div>
 
-          {/* Status Indicators - Improved Design */}
-          <div className="flex flex-col gap-3 lg:items-end">
-            {/* Status Badge */}
-            <div className="flex justify-center lg:justify-end">
-              {getStatusBadge(bot.status)}
-            </div>
-            
-            {/* Fund & Recharge Status */}
-            <div className="flex flex-col gap-2 px-4 py-3 bg-gray-800/60 border border-gray-700/50 rounded-xl backdrop-blur-sm">
-              {/* Fund Add Status */}
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${bot?.firstFundAdd ? 'bg-green-400 shadow-green-400/50' : 'bg-red-400 shadow-red-400/50'} shadow-sm`}></div>
-                <span className="text-xs font-medium text-gray-300">Fund Add</span>
-                <div className="ml-auto">
-                  {bot?.firstFundAdd ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-400" />
-                  ) : (
-                    <X className="h-4 w-4 text-red-400" />
-                  )}
-                </div>
+          {/* Status & Fund/Recharge Status */}
+          <div className="flex flex-col gap-2 items-end">
+            {getStatusBadge(bot.status)}
+            <div className="flex gap-2">
+              <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/60 border border-gray-700/50 rounded">
+                <div className={`w-2 h-2 rounded-full ${bot?.firstFundAdd ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                <span className="text-xs text-gray-300">Fund</span>
+                {bot?.firstFundAdd ? (
+                  <CheckCircle2 className="h-3 w-3 text-green-400" />
+                ) : (
+                  <X className="h-3 w-3 text-red-400" />
+                )}
               </div>
-              
-              {/* Separator */}
-              <div className="w-full h-px bg-gray-600/50"></div>
-              
-              {/* Recharge Status */}
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${bot?.firstRechageDate ? 'bg-green-400 shadow-green-400/50' : 'bg-red-400 shadow-red-400/50'} shadow-sm`}></div>
-                <span className="text-xs font-medium text-gray-300">Recharge</span>
-                <div className="ml-auto">
-                  {bot?.firstRechageDate ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-400" />
-                  ) : (
-                    <X className="h-4 w-4 text-red-400" />
-                  )}
-                </div>
+              <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/60 border border-gray-700/50 rounded">
+                <div className={`w-2 h-2 rounded-full ${bot?.firstRechageDate ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                <span className="text-xs text-gray-300">Recharge</span>
+                {bot?.firstRechageDate ? (
+                  <CheckCircle2 className="h-3 w-3 text-green-400" />
+                ) : (
+                  <X className="h-3 w-3 text-red-400" />
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats - Responsive Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
-          <div className="text-center p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-            <p className="text-gray-400 mb-2 text-xs font-medium">Engine</p>
-            <p className="text-white font-bold text-lg">{bot.engine || 0}</p>
+        {/* Stats & Wallet Information - Optimized Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+          {/* Engine & Token */}
+          <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-gray-400 text-xs mb-1">Engine</p>
+            <p className="text-white font-bold text-sm">{bot.engine || 0}</p>
           </div>
-          <div className="text-center col-span-1 p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-            <p className="text-gray-400 mb-2 text-xs font-medium">Token</p>
-            <p className="text-white font-bold text-sm sm:text-lg truncate">
+          <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            {/* <p className="text-gray-400 text-xs mb-1">Token</p> */}
+            {/* <p className="text-white font-bold text-xs truncate">
               {bot?.tokenSymbol || "N/A"}
-            </p>
+            </p> */}
+            <p className="text-gray-400 text-xs mb-1">Created</p>
+          <p className="text-white font-bold text-xs">
+            {bot.createdAt
+              ? new Date(bot.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : "Unknown"}
+          </p>
           </div>
-          <div className="text-center col-span-2 p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-            <p className="text-gray-400 mb-2 text-xs font-medium">Created</p>
-            <p className="text-white font-bold text-xs">
-              {bot.createdAt
-                ? new Date(bot.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : "Unknown"}
-            </p>
-          </div>
-        </div>
-
-        {/* Wallet Information - Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-          <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-            <p className="text-xs text-gray-400 mb-2 font-medium">User Wallet</p>
-            <div className="flex items-center justify-between gap-2">
+          
+          {/* User Wallet */}
+          <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-xs text-gray-400 mb-1">User Wallet</p>
+            <div className="flex items-center justify-between gap-1">
               <span className="text-xs text-gray-300 font-mono truncate flex-1">
                 {bot.userWallet ? `${bot.userWallet.slice(0, 6)}...${bot.userWallet.slice(-6)}` : 'N/A'}
               </span>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => bot.userWallet && handleCopy(bot.userWallet, 'userWallet')}
-                  className={`p-1 rounded transition-colors ${copiedField === 'userWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-0.5 rounded transition-colors ${copiedField === 'userWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
                   title="Copy user wallet"
                   disabled={!bot.userWallet}
                 >
@@ -420,7 +399,7 @@ export default function AdminBots() {
                 <Link
                   href={`https://solscan.io/address/${bot.userWallet}`}
                   target="_blank"
-                  className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                  className="p-0.5 text-gray-400 hover:text-blue-400 rounded transition-colors"
                   title="View on Solscan"
                 >
                   <ExternalLink className="h-3 w-3" />
@@ -429,16 +408,17 @@ export default function AdminBots() {
             </div>
           </div>
 
-          <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-            <p className="text-xs text-gray-400 mb-2 font-medium">Bot Wallet</p>
-            <div className="flex items-center justify-between gap-2">
+          {/* Bot Wallet */}
+          <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-xs text-gray-400 mb-1">Bot Wallet</p>
+            <div className="flex items-center justify-between gap-1">
               <span className="text-xs text-gray-300 font-mono truncate flex-1">
                 {bot.ownerWalletAddress ? `${bot.ownerWalletAddress.slice(0, 6)}...${bot.ownerWalletAddress.slice(-6)}` : 'N/A'}
               </span>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => bot.ownerWalletAddress && handleCopy(bot.ownerWalletAddress, 'botWallet')}
-                  className={`p-1 rounded transition-colors ${copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-0.5 rounded transition-colors ${copiedField === 'botWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
                   title="Copy bot wallet"
                   disabled={!bot.ownerWalletAddress}
                 >
@@ -447,7 +427,7 @@ export default function AdminBots() {
                 <Link
                   href={`https://solscan.io/address/${bot.ownerWalletAddress}`}
                   target="_blank"
-                  className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                  className="p-0.5 text-gray-400 hover:text-blue-400 rounded transition-colors"
                   title="View on Solscan"
                 >
                   <ExternalLink className="h-3 w-3" />
@@ -455,17 +435,21 @@ export default function AdminBots() {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-            <p className="text-xs text-gray-400 mb-2 font-medium">Middle Wallet</p>
-            <div className="flex items-center justify-between gap-2">
+        {/* Additional Wallet Information - Horizontal Layout */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          {/* Middle Wallet */}
+          <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-xs text-gray-400 mb-1">Middle Wallet</p>
+            <div className="flex items-center justify-between gap-1">
               <span className="text-xs text-gray-300 font-mono truncate flex-1">
                 {bot.middleWalletAddress ? `${bot.middleWalletAddress.slice(0, 6)}...${bot.middleWalletAddress.slice(-6)}` : 'N/A'}
               </span>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => bot.middleWalletAddress && handleCopy(bot.middleWalletAddress, 'middleWallet')}
-                  className={`p-1 rounded transition-colors ${copiedField === 'middleWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-0.5 rounded transition-colors ${copiedField === 'middleWallet' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
                   title="Copy middle wallet"
                   disabled={!bot.middleWalletAddress}
                 >
@@ -474,7 +458,7 @@ export default function AdminBots() {
                 <Link
                   href={`https://solscan.io/address/${bot.middleWalletAddress}`}
                   target="_blank"
-                  className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                  className="p-0.5 text-gray-400 hover:text-blue-400 rounded transition-colors"
                   title="View on Solscan"
                 >
                   <ExternalLink className="h-3 w-3" />
@@ -483,16 +467,19 @@ export default function AdminBots() {
             </div>
           </div>
 
-          <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-            <p className="text-xs text-gray-400 mb-2 font-medium">Token Address</p>
-            <div className="flex items-center justify-between gap-2">
+          {/* Token Address */}
+          <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
+            <p className="text-xs text-gray-400 mb-1">Token <span className="text-white font-bold text-xs truncate">
+              {bot?.tokenSymbol || "N/A"}
+            </span></p>
+            <div className="flex items-center justify-between gap-1">
               <span className="text-xs text-gray-300 font-mono truncate flex-1">
                 {bot.tokenAddress ? `${bot.tokenAddress.slice(0, 6)}...${bot.tokenAddress.slice(-6)}` : 'N/A'}
               </span>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => bot.tokenAddress && handleCopy(bot.tokenAddress, 'tokenAddress')}
-                  className={`p-1 rounded transition-colors ${copiedField === 'tokenAddress' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-0.5 rounded transition-colors ${copiedField === 'tokenAddress' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
                   title="Copy token address"
                   disabled={!bot.tokenAddress}
                 >
@@ -501,7 +488,7 @@ export default function AdminBots() {
                 <Link
                   href={`https://dexscreener.com/solana/${bot.tokenAddress}`}
                   target="_blank"
-                  className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                  className="p-0.5 text-gray-400 hover:text-blue-400 rounded transition-colors"
                   title="View on DexScreener"
                 >
                   <ExternalLink className="h-3 w-3" />
@@ -511,26 +498,14 @@ export default function AdminBots() {
           </div>
         </div>
 
-        {/* Activity Section - Responsive Layout */}
-        <div className="space-y-3 mb-6">
+        {/* Activity Section - Horizontal Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-3">
           {/* Last Log */}
           {bot?.lastLogs && bot.lastLogs.length > 0 ? (
-            <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 transition-all duration-200 group-hover:bg-gray-700/40">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-blue-500/20 rounded">
-                    <Activity className="h-3 w-3 text-blue-400" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-400">Last Log</span>
-                    <span className="text-xs text-white font-medium">
-                      {new Date(bot.lastLogs[bot.lastLogs.length - 1].timestamp).toLocaleString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        dateStyle: 'short',
-                        timeStyle: 'short'
-                      })}
-                    </span>
-                  </div>
+            <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
+              <div className="flex items-center gap-2">
+                <div className="p-1 bg-blue-500/20 rounded">
+                  <Activity className="h-3 w-3 text-blue-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-300 truncate" title={bot.lastLogs[bot.lastLogs.length - 1].message}>
@@ -538,7 +513,7 @@ export default function AdminBots() {
                   </p>
                 </div>
                 {bot.lastLogs[bot.lastLogs.length - 1].level && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${bot.lastLogs[bot.lastLogs.length - 1].level === 'error' ? 'bg-red-500/20 text-red-400' :
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${bot.lastLogs[bot.lastLogs.length - 1].level === 'error' ? 'bg-red-500/20 text-red-400' :
                       bot.lastLogs[bot.lastLogs.length - 1].level === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
                         bot.lastLogs[bot.lastLogs.length - 1].level === 'info' ? 'bg-blue-500/20 text-blue-400' :
                           'bg-gray-500/20 text-gray-400'
@@ -547,9 +522,16 @@ export default function AdminBots() {
                   </span>
                 )}
               </div>
+              <div className="text-xs text-gray-400 mt-1">
+                {new Date(bot.lastLogs[bot.lastLogs.length - 1].timestamp).toLocaleString('en-IN', {
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                })}
+              </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 p-3 bg-gray-700/20 rounded-lg border border-gray-600/20">
+            <div className="flex items-center gap-2 p-2 bg-gray-700/20 rounded border border-gray-600/20">
               <div className="p-1 bg-gray-500/20 rounded">
                 <Activity className="h-3 w-3 text-gray-400" />
               </div>
@@ -559,26 +541,14 @@ export default function AdminBots() {
 
           {/* Last Trade */}
           {bot?.lastTrades && bot.lastTrades.length > 0 ? (
-            <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 transition-all duration-200 group-hover:bg-gray-700/40">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-green-500/20 rounded">
-                    <Wallet className="h-3 w-3 text-green-400" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-400">Last Trade</span>
-                    <span className="text-xs text-white font-medium">
-                      {new Date(bot.lastTrades[bot.lastTrades.length - 1].timestamp).toLocaleString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        dateStyle: 'short',
-                        timeStyle: 'short'
-                      })}
-                    </span>
-                  </div>
+            <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
+              <div className="flex items-center gap-2">
+                <div className="p-1 bg-green-500/20 rounded">
+                  <Wallet className="h-3 w-3 text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${bot.lastTrades[bot.lastTrades.length - 1].tradeType === 'buy' ? 'bg-green-500/20 text-green-400' :
+                    <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${bot.lastTrades[bot.lastTrades.length - 1].tradeType === 'buy' ? 'bg-green-500/20 text-green-400' :
                         bot.lastTrades[bot.lastTrades.length - 1].tradeType === 'sell' ? 'bg-red-500/20 text-red-400' :
                           'bg-gray-500/20 text-gray-400'
                       }`}>
@@ -590,9 +560,16 @@ export default function AdminBots() {
                   </div>
                 </div>
               </div>
+              <div className="text-xs text-gray-400 mt-1">
+                {new Date(bot.lastTrades[bot.lastTrades.length - 1].timestamp).toLocaleString('en-IN', {
+                  timeZone: 'Asia/Kolkata',
+                  dateStyle: 'short',
+                  timeStyle: 'short'
+                })}
+              </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 p-3 bg-gray-700/20 rounded-lg border border-gray-600/20">
+            <div className="flex items-center gap-2 p-2 bg-gray-700/20 rounded border border-gray-600/20">
               <div className="p-1 bg-gray-500/20 rounded">
                 <Wallet className="h-3 w-3 text-gray-400" />
               </div>
@@ -601,47 +578,49 @@ export default function AdminBots() {
           )}
         </div>
 
-        {/* Action Buttons - Responsive Layout */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-700/30">
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+        {/* Created Date */}
+        
+
+        {/* Action Buttons - Optimized Layout */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-700/30">
+          <div className="flex items-center gap-2">
             <Link
               href={`/admin/bots/${bot.id}/trade-wallets`}
-              className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-md ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-all duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => setIsLoading(true)}
             >
               {isLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
                   <span>Loading</span>
                 </>
               ) : (
                 <>
-                  <Wallet className="h-4 w-4" />
+                  <Wallet className="h-3 w-3" />
                   <span>Trade Wallets</span>
                 </>
               )}
             </Link>
- 
+            
             <Link
               href={`/admin/bots/${bot.id}`}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-md"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-all duration-200"
             >
-              <BotIcon className="h-4 w-4" />
+              <BotIcon className="h-3 w-3" />
               <span>Details</span>
             </Link>
             
             <Link
               href={`/admin/bots/${bot.id}/logs`}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-md"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-all duration-200"
             >
-              <Activity className="h-4 w-4" />
+              <Activity className="h-3 w-3" />
               <span>Logs</span>
             </Link>
           </div>
 
           {/* Additional Info */}
-          <div className="flex items-center justify-between sm:justify-end gap-4 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
             {bot.lastTradeAt && (
               <span className="flex items-center gap-1">
                 <Activity className="h-3 w-3" />
