@@ -16,6 +16,7 @@ import {
   Mail,
   Wallet,
   UsersRound,
+  Flame,
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'Admins', href: '/admin/admins', icon: Shield },
   { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
   { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
+  { name: 'Token Burns', href: '/admin/token-burns', icon: Flame },
   { name: 'Wallet Balances', href: '/admin/wallet-balances', icon: Wallet },
   { name: 'Emails', href: '/admin/emails', icon: Mail },
   { name: 'Email Monitoring', href: '/admin/email-monitoring', icon: Mail },
