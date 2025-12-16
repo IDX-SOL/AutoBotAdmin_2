@@ -3,12 +3,15 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 // Types
 export interface AdminUser {
   id: string;
+  username?: string;
   firstName: string;
   lastName: string;
   email: string;
   role: string;
   createdAt: string;
   updatedAt: string;
+  permissions?: Record<string, boolean>;
+  isActive?: boolean;
 }
 
 export interface User {
@@ -137,6 +140,76 @@ export interface HolderBotsResponse {
 
 export interface AdminsResponse {
   admins: AdminUser[];
+}
+
+export interface HolderBot {
+  id: string;
+  botName?: string;
+  status: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+  ownerWalletAddress?: string;
+  mintAddress?: string;
+  holdersProcessed?: number;
+  lastHolderWalletIndex?: number;
+  fundAdded?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  user?: {
+    id?: string;
+    username?: string;
+    email?: string;
+    platform?: string;
+    device?: string;
+  };
+}
+
+export interface HolderBotsResponse {
+  bots: HolderBot[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ReactionBot {
+  id: string;
+  botName?: string;
+  status: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+  ownerWalletAddress?: string;
+  targetUrl?: string;
+  actionType?: string;
+  reactionsPlanned?: number;
+  reactionsProcessed?: number;
+  totalActions?: number;
+  lastActionIndex?: number;
+  pairAddress?: string;
+  chain?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  user?: {
+    id?: string;
+    username?: string;
+    email?: string;
+    platform?: string;
+    device?: string;
+  };
+}
+
+export interface ReactionBotsResponse {
+  bots: ReactionBot[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface WalletBalance {
@@ -326,6 +399,67 @@ export interface EmailHistoryResponse {
   totalPages: number;
 }
 
+export interface CreateAdminPayload {
+  username: string;
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  role: 'super_admin' | 'admin' | 'moderator' | 'support';
+  permissions?: Record<string, boolean>;
+}
+
+export interface TokenBurnRecord {
+  id: number;
+  walletAddress: string;
+  tokenMint: string;
+  tokenSymbol?: string | null;
+  tokenName?: string | null;
+  tokenAccount?: string | null;
+  decimals?: number | null;
+  amount: number;
+  amountRaw?: string | null;
+  txSignature: string;
+  serviceFeeSol?: number | null;
+  networkFeeSol?: number | null;
+  totalFeeSol?: number | null;
+  connectedWallet?: string | null;
+  status: 'pending' | 'completed' | 'failed';
+  metadata?: Record<string, unknown>;
+  burnedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+  } | null;
+}
+
+export interface TokenBurnSummary {
+  totalBurned: number;
+  totalServiceFees: number;
+  totalNetworkFees: number;
+  uniqueWallets: number;
+  uniqueTokens: number;
+  lastBurnAt?: string | null;
+  totalBurns?: number;
+}
+
+export interface TokenBurnListResponse {
+  success: boolean;
+  data: {
+    burns: TokenBurnRecord[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+    summary: TokenBurnSummary;
+  };
+}
+
 // Create admin axios instance with different configuration
 const adminAxiosInstance: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
@@ -420,6 +554,7 @@ const adminApiService = {
   // Admins management
   getAdmins: (): Promise<AxiosResponse<AdminsResponse>> => 
     adminAxiosInstance.get('/admin/admins'),
+  createAdmin: (adminData: CreateAdminPayload): Promise<AxiosResponse<AdminUser>> =>
   createAdmin: (adminData: Partial<AdminUser>): Promise<AxiosResponse<AdminUser>> => 
     adminAxiosInstance.post('/admin/admins', adminData),
   updateAdmin: (adminId: string, adminData: Partial<AdminUser>): Promise<AxiosResponse<AdminUser>> => 
@@ -474,7 +609,11 @@ const adminApiService = {
     adminAxiosInstance.get('/admin-dev/tokens/list'),
   getTokensStats: (): Promise<AxiosResponse<unknown>> => 
     adminAxiosInstance.get('/admin-dev/tokens/stats'),
-  
+  getTokenBurns: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<TokenBurnListResponse>> =>
+    adminAxiosInstance.get('/admin/token-burns', { params }),
+  getTokenBurnStats: (): Promise<AxiosResponse<{ success: boolean; data: TokenBurnSummary }>> =>
+    adminAxiosInstance.get('/admin/token-burns/stats'),
+
   // Email Automation
   getEmailStats: (): Promise<AxiosResponse<{ success: boolean; stats: EmailStats }>> => 
     adminAxiosInstance.get('/admin/emails/stats'),
@@ -510,7 +649,15 @@ const adminApiService = {
     adminAxiosInstance.put(`/admin/emails/templates/${templateId}`, template),
   deleteEmailTemplate: (templateId: number): Promise<AxiosResponse<{ success: boolean; message: string }>> => 
     adminAxiosInstance.delete(`/admin/emails/templates/${templateId}`),
-  
+
+  // Holder Bots management
+  getHolderBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<HolderBotsResponse>> =>
+    adminAxiosInstance.get('/admin/holder-bots', { params }),
+
+  // Reaction Bots management
+  getReactionBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<ReactionBotsResponse>> =>
+    adminAxiosInstance.get('/admin/reaction-bots', { params }),
+
   // Wallet Balance Management
   getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> => 
     adminAxiosInstance.get('/wallet-balance/today'),

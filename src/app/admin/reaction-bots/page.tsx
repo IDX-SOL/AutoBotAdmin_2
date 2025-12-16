@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "../../../components/admin/AdminLayout";
-import adminApiService, { HolderBot } from "../../../utils/adminApiService";
+import adminApiService, { ReactionBot } from "../../../utils/adminApiService";
 import {
   Bot as BotIcon,
   Activity,
@@ -11,13 +11,16 @@ import {
   ExternalLink,
   Trash2,
   CheckCircle2,
-  X
+  X,
+  Target,
+  Zap,
+  Globe
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast/ToastContext";
 
-export default function AdminHolderBots() {
-  const [bots, setBots] = useState<HolderBot[]>([]);
+export default function AdminReactionBots() {
+  const [bots, setBots] = useState<ReactionBot[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [deletedFilter, setDeletedFilter] = useState("");
@@ -45,7 +48,7 @@ export default function AdminHolderBots() {
         status: statusFilter,
         deleted: deletedFilter
       };
-      const response = await adminApiService.getHolderBots(params);
+      const response = await adminApiService.getReactionBots(params);
       if (response && response.data) {
         const botsData = response.data.bots || [];
         const paginationData = response.data.pagination || {
@@ -68,7 +71,7 @@ export default function AdminHolderBots() {
         setTotalPages(1);
       }
     } catch (error: unknown) {
-      console.error("Error fetching holder bots:", error);
+      console.error("Error fetching reaction bots:", error);
       setBots([]);
       setPagination({
         page: currentPage,
@@ -77,7 +80,7 @@ export default function AdminHolderBots() {
         totalPages: 1
       });
       setTotalPages(1);
-      showError("Failed to fetch holder bots");
+      showError("Failed to fetch reaction bots");
     } finally {
       setLoading(false);
     }
@@ -115,7 +118,7 @@ export default function AdminHolderBots() {
   const Pagination = () => (
     <div className="flex items-center justify-between">
       <div className="text-sm text-gray-400">
-        Showing {(currentPage - 1) * 20 + 1} to {Math.min(currentPage * 20, pagination.total)} of {pagination.total} holder bots
+        Showing {(currentPage - 1) * 20 + 1} to {Math.min(currentPage * 20, pagination.total)} of {pagination.total} reaction bots
       </div>
       <div className="flex items-center space-x-2">
         <button
@@ -164,11 +167,11 @@ export default function AdminHolderBots() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Holder Bots</h1>
-            <p className="text-gray-400 text-lg">Monitor and manage holder distribution bots</p>
+            <h1 className="text-4xl font-bold text-white mb-2">Reaction Bots</h1>
+            <p className="text-gray-400 text-lg">Monitor and manage reaction automation bots</p>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-400">Total: {pagination.total || 0} holder bots</span>
+            <span className="text-sm text-gray-400">Total: {pagination.total || 0} reaction bots</span>
           </div>
         </div>
 
@@ -227,36 +230,12 @@ export default function AdminHolderBots() {
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
                 {/* Bot Info */}
                 <div className="flex items-start gap-4 min-w-0 flex-1">
-                  <div className="h-14 w-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-emerald-500/20">
-                    <BotIcon className="h-7 w-7 text-white" />
+                  <div className="h-14 w-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-purple-500/20">
+                    <Target className="h-7 w-7 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-                      <h3 className="text-xl font-bold text-white truncate">{bot.botName || "Holder Bot"}</h3>
-                      {getStatusBadge(bot.status)}
-                      {/* Fund Added Status Badge */}
-                      {bot.fundAdded !== undefined && (
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
-                            bot.fundAdded
-                              ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                              : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                          }`}
-                          title={bot.fundAdded ? "Funds have been added" : "Funds not yet added"}
-                        >
-                          {bot.fundAdded ? (
-                            <>
-                              <Check className="h-3 w-3" />
-                              Fund Added
-                            </>
-                          ) : (
-                            <>
-                              <Activity className="h-3 w-3" />
-                              Fund Not Added
-                            </>
-                          )}
-                        </span>
-                      )}
+                      <h3 className="text-xl font-bold text-white truncate">{bot.botName || "Reaction Bot"}</h3>
                     </div>
                     {bot.user?.email && (
                       <Link
@@ -266,22 +245,17 @@ export default function AdminHolderBots() {
                         <span className="group-hover:underline">{bot.user?.email}</span>
                       </Link>
                     )}
+                    {bot.targetUrl && (
+                      <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
+                        <Globe className="h-3 w-3" />
+                        <span className="truncate">{bot.targetUrl}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                {/* Status & Fund Status */}
+                {/* Status */}
                 <div className="flex flex-col gap-2 lg:items-end">
                   {getStatusBadge(bot.status)}
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/60 border border-gray-700/50 rounded">
-                      <div className={`w-2 h-2 rounded-full ${bot?.fundAdded ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                      <span className="text-xs text-gray-300">Fund</span>
-                      {bot?.fundAdded ? (
-                        <CheckCircle2 className="h-3 w-3 text-green-400" />
-                      ) : (
-                        <X className="h-3 w-3 text-red-400" />
-                      )}
-                    </div>
-                  </div>
                   <div className="flex flex-col gap-1 text-xs text-gray-400">
                     <div>Created: {new Date(bot.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
                     <div>Updated: {new Date(bot.updatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
@@ -289,18 +263,46 @@ export default function AdminHolderBots() {
                 </div>
               </div>
 
-              {/* Wallets */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
+              {/* Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <div className="text-center p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-                  <p className="text-gray-400 mb-2 text-xs font-medium">Processed</p>
-                  <p className="text-white font-bold text-lg">{bot.holdersProcessed ?? 0}</p>
+                  <p className="text-gray-400 mb-2 text-xs font-medium">Planned</p>
+                  <p className="text-white font-bold text-lg">{bot.reactionsPlanned ?? 0}</p>
                 </div>
                 <div className="text-center p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-                  <p className="text-gray-400 mb-2 text-xs font-medium">Token</p>
+                  <p className="text-gray-400 mb-2 text-xs font-medium">Processed</p>
+                  <p className="text-white font-bold text-lg">{bot.reactionsProcessed ?? 0}</p>
+                </div>
+                <div className="text-center p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
+                  <p className="text-gray-400 mb-2 text-xs font-medium">Total Actions</p>
+                  <p className="text-white font-bold text-lg">{bot.totalActions ?? 0}</p>
+                </div>
+              </div>
+
+              {/* Token & Chain Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
+                  <p className="text-xs text-gray-400 mb-2 font-medium">Token</p>
                   <p className="text-white font-bold text-sm">
                     {bot.tokenName || "Unknown Token"} ({bot.tokenSymbol || "UNKNOWN"})
                   </p>
+                  {bot.chain && (
+                    <p className="text-xs text-gray-400 mt-1">Chain: {bot.chain}</p>
+                  )}
                 </div>
+                <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
+                  <p className="text-xs text-gray-400 mb-2 font-medium">Action Type</p>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3 w-3 text-yellow-400" />
+                    <span className="text-white font-medium text-sm capitalize">
+                      {bot.actionType || "reaction"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wallets */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
                   <p className="text-xs text-gray-400 mb-2 font-medium">Owner Wallet</p>
                   <div className="flex items-center justify-between gap-2">
@@ -328,22 +330,22 @@ export default function AdminHolderBots() {
                   </div>
                 </div>
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-                  <p className="text-xs text-gray-400 mb-2 font-medium">Mint Address</p>
+                  <p className="text-xs text-gray-400 mb-2 font-medium">Pair Address</p>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-300 font-mono truncate flex-1">
-                      {bot.mintAddress ? `${bot.mintAddress.slice(0, 6)}...${bot.mintAddress.slice(-6)}` : "N/A"}
+                      {bot.pairAddress ? `${bot.pairAddress.slice(0, 6)}...${bot.pairAddress.slice(-6)}` : "N/A"}
                     </span>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
-                        onClick={() => bot.mintAddress && handleCopy(bot.mintAddress, "mintAddress")}
-                        className={`p-1 rounded transition-colors ${copiedField === "mintAddress" ? "text-green-400" : "text-gray-400 hover:text-white"}`}
-                        title="Copy mint address"
-                        disabled={!bot.mintAddress}
+                        onClick={() => bot.pairAddress && handleCopy(bot.pairAddress, "pairAddress")}
+                        className={`p-1 rounded transition-colors ${copiedField === "pairAddress" ? "text-green-400" : "text-gray-400 hover:text-white"}`}
+                        title="Copy pair address"
+                        disabled={!bot.pairAddress}
                       >
-                        {copiedField === "mintAddress" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        {copiedField === "pairAddress" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                       </button>
                       <Link
-                        href={`https://solscan.io/address/${bot.mintAddress}`}
+                        href={`https://solscan.io/address/${bot.pairAddress}`}
                         target="_blank"
                         className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
                         title="View on Solscan"
@@ -359,7 +361,7 @@ export default function AdminHolderBots() {
               <div className="flex items-center justify-between pt-4 border-t border-gray-700/30">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Activity className="h-3 w-3" />
-                  <span>Index: {bot.lastHolderWalletIndex ?? 0}</span>
+                  <span>Last Action: {bot.lastActionIndex ?? 0}</span>
                 </div>
                 {bot.deletedAt && (
                   <div className="flex items-center gap-1 text-xs text-red-400">
@@ -379,8 +381,8 @@ export default function AdminHolderBots() {
         {/* Empty State */}
         {bots.length === 0 && !loading && (
           <div className="text-center py-12">
-            <BotIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">No holder bots found</h3>
+            <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No reaction bots found</h3>
             <p className="text-gray-400">Try adjusting your filters</p>
           </div>
         )}
@@ -395,4 +397,3 @@ export default function AdminHolderBots() {
     </AdminLayout>
   );
 }
-
