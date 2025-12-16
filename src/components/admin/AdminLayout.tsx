@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { 
-  BarChart3, 
-  Users, 
-  Bot, 
-  LogOut, 
-  Menu, 
+import {
+  BarChart3,
+  Users,
+  Bot,
+  LogOut,
+  Menu,
   X,
   Shield,
   TrendingUp,
@@ -17,6 +17,7 @@ import {
   Wallet,
   UsersRound,
   Flame,
+  Target,
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Bots', href: '/admin/bots', icon: Bot },
   { name: 'Holder Bots', href: '/admin/holder-bots', icon: UsersRound },
+  { name: 'Reaction Bots', href: '/admin/reaction-bots', icon: Target },
   { name: 'Admins', href: '/admin/admins', icon: Shield },
   { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
   { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
