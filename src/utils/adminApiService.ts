@@ -183,6 +183,8 @@ export interface ReactionBot {
   lastActionIndex?: number;
   pairAddress?: string;
   chain?: string;
+  fundAdded?: boolean;
+  FirstRechargeDone?: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

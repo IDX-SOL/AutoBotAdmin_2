@@ -4,17 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import adminApiService, { ReactionBot } from "../../../utils/adminApiService";
 import {
-  Bot as BotIcon,
   Activity,
   Copy,
   Check,
   ExternalLink,
   Trash2,
-  CheckCircle2,
-  X,
   Target,
   Zap,
-  Globe
+  Globe,
+  CheckCircle2,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast/ToastContext";
@@ -253,14 +252,41 @@ export default function AdminReactionBots() {
                     )}
                   </div>
                 </div>
-                {/* Status */}
                 <div className="flex flex-col gap-2 lg:items-end">
                   {getStatusBadge(bot.status)}
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/60 border border-gray-700/50 rounded">
+                      <div className={`w-2 h-2 rounded-full ${bot?.fundAdded ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                      <span className="text-xs text-gray-300">Fund</span>
+                      {bot?.fundAdded ? (
+                        <CheckCircle2 className="h-3 w-3 text-green-400" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-400" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/60 border border-gray-700/50 rounded">
+                      <div className={`w-2 h-2 rounded-full ${bot?.FirstRechargeDone ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                      <span className="text-xs text-gray-300">Recharge</span>
+                      {bot?.FirstRechargeDone ? (
+                        <CheckCircle2 className="h-3 w-3 text-green-400" />
+                      ) : (
+                        <X className="h-3 w-3 text-red-400" />
+                      )}
+                    </div>
+                  </div>
                   <div className="flex flex-col gap-1 text-xs text-gray-400">
                     <div>Created: {new Date(bot.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
                     <div>Updated: {new Date(bot.updatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
                   </div>
                 </div>
+                {/* Status */}
+                {/* <div className="flex flex-col gap-2 lg:items-end">
+                  {getStatusBadge(bot.status)}
+                  <div className="flex flex-col gap-1 text-xs text-gray-400">
+                    <div>Created: {new Date(bot.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+                    <div>Updated: {new Date(bot.updatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+                  </div>
+                </div> */}
               </div>
 
               {/* Stats */}
