@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Flame, RefreshCw, Search } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import adminApiService, { TokenBurnRecord, TokenBurnSummary } from '@/utils/adminApiService';
+import Image from 'next/image';
 
 const dateFormatter = new Intl.DateTimeFormat('en-IN', {
   timeZone: 'Asia/Kolkata',
@@ -316,10 +317,12 @@ export default function TokenBurnsPage() {
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-3">
                           {burn.metadata?.tokenLogo ? (
-                            <img
-                              src={burn.metadata.tokenLogo as string}
+                            <Image
+                              width={36}
+                              height={36}
+                              src={burn.metadata?.tokenLogo as string}
                               alt={burn.tokenSymbol || 'token logo'}
-                              className="h-9 w-9 rounded-full object-cover"
+                              className="rounded-full object-cover"
                             />
                           ) : (
                             <div className="h-9 w-9 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-300">
