@@ -306,7 +306,7 @@ export default function AdminReactionBots() {
               </div>
 
               {/* Token & Chain Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
                   <p className="text-xs text-gray-400 mb-2 font-medium">Token</p>
                   <p className="text-white font-bold text-sm">
@@ -321,14 +321,10 @@ export default function AdminReactionBots() {
                   <div className="flex items-center gap-2">
                     <Zap className="h-3 w-3 text-yellow-400" />
                     <span className="text-white font-medium text-sm capitalize">
-                      {bot.actionType || "reaction"}
+                      {bot.actionType || "Rocket"}
                     </span>
                   </div>
                 </div>
-              </div>
-
-              {/* Wallets */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
                   <p className="text-xs text-gray-400 mb-2 font-medium">Owner Wallet</p>
                   <div className="flex items-center justify-between gap-2">
@@ -371,7 +367,7 @@ export default function AdminReactionBots() {
                         {copiedField === "pairAddress" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                       </button>
                       <Link
-                        href={`https://solscan.io/address/${bot.pairAddress}`}
+                        href={`https://dexscreener.com/solana/${bot.pairAddress}`}
                         target="_blank"
                         className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
                         title="View on Solscan"
@@ -385,10 +381,10 @@ export default function AdminReactionBots() {
 
               {/* Footer */}
               <div className="flex items-center justify-between pt-4 border-t border-gray-700/30">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                {/* <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Activity className="h-3 w-3" />
                   <span>Last Action: {bot.lastActionIndex ?? 0}</span>
-                </div>
+                </div> */}
                 {bot.deletedAt && (
                   <div className="flex items-center gap-1 text-xs text-red-400">
                     <Trash2 className="h-3 w-3" />
