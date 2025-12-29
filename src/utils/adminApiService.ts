@@ -174,6 +174,44 @@ export interface HolderBotsResponse {
     totalPages: number;
   };
 }
+export interface ReactionBot {
+  id: string;
+  botName?: string;
+  status: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+  ownerWalletAddress?: string;
+  targetUrl?: string;
+  actionType?: string;
+  reactionsPlanned?: number;
+  reactionsProcessed?: number;
+  totalActions?: number;
+  lastActionIndex?: number;
+  pairAddress?: string;
+  chain?: string;
+  fundAdded?: boolean;
+  FirstRechargeDone?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  user?: {
+    id?: string;
+    username?: string;
+    email?: string;
+    platform?: string;
+    device?: string;
+  };
+}
+
+export interface ReactionBotsResponse {
+  bots: ReactionBot[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export interface ReactionBot {
   id: string;
@@ -653,11 +691,9 @@ const adminApiService = {
   // Holder Bots management
   getHolderBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<HolderBotsResponse>> =>
     adminAxiosInstance.get('/admin/holder-bots', { params }),
-
   // Reaction Bots management
   getReactionBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<ReactionBotsResponse>> =>
     adminAxiosInstance.get('/admin/reaction-bots', { params }),
-
   // Wallet Balance Management
   getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> => 
     adminAxiosInstance.get('/wallet-balance/today'),
