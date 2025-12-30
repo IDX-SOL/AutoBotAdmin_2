@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "../../../components/admin/AdminLayout";
-import adminApiService, { ReactionBot } from "../../../utils/adminApiService";
+import adminApiService, { ReactionBot, ReactionBotHistory } from "../../../utils/adminApiService";
 import {
   Activity,
   Copy,
@@ -13,13 +13,41 @@ import {
   Zap,
   Globe,
   CheckCircle2,
-  X
+  X,
+  History,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast/ToastContext";
 
+const dateFormatter = new Intl.DateTimeFormat('en-IN', {
+  timeZone: 'Asia/Kolkata',
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
+const formatDate = (value?: string | null) => {
+  if (!value) return '—';
+  try {
+    return dateFormatter.format(new Date(value));
+  } catch {
+    return value;
+  }
+};
+
+const formatNumber = (value?: number | null, maximumFractionDigits = 4) => {
+  if (value === null || value === undefined) return '—';
+  return Number(value).toLocaleString('en-IN', {
+    maximumFractionDigits,
+  });
+};
+
 export default function AdminReactionBots() {
   const [bots, setBots] = useState<ReactionBot[]>([]);
+  const [botHistories, setBotHistories] = useState<Record<string, ReactionBotHistory[]>>({});
+  const [expandedBots, setExpandedBots] = useState<Set<string>>(new Set());
+  const [loadingHistories, setLoadingHistories] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [deletedFilter, setDeletedFilter] = useState("");
@@ -85,9 +113,54 @@ export default function AdminReactionBots() {
     }
   }, [currentPage, statusFilter, deletedFilter, showError]);
 
+  const fetchBotHistory = useCallback(async (botId: string) => {
+    if (botHistories[botId]) {
+      // History already loaded
+      return;
+    }
+
+    setLoadingHistories((prev) => new Set(prev).add(botId));
+    try {
+      const response = await adminApiService.getReactionBotHistory({ botId, limit: 100 });
+      if (response && response.data) {
+        const history = response.data.history || [];
+        setBotHistories((prev) => ({
+          ...prev,
+          [botId]: history,
+        }));
+      }
+    } catch (err) {
+      console.error(`Error fetching history for bot ${botId}:`, err);
+      setBotHistories((prev) => ({
+        ...prev,
+        [botId]: [],
+      }));
+    } finally {
+      setLoadingHistories((prev) => {
+        const next = new Set(prev);
+        next.delete(botId);
+        return next;
+      });
+    }
+  }, [botHistories]);
+
   useEffect(() => {
     fetchBots();
   }, [fetchBots]);
+
+  const toggleBotExpansion = (botId: string) => {
+    setExpandedBots((prev) => {
+      const next = new Set(prev);
+      if (next.has(botId)) {
+        next.delete(botId);
+      } else {
+        next.add(botId);
+        // Fetch history when expanding
+        fetchBotHistory(botId);
+      }
+      return next;
+    });
+  };
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -220,7 +293,12 @@ export default function AdminReactionBots() {
 
         {/* Bots Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {bots.map((bot) => (
+          {bots.map((bot) => {
+            const history = botHistories[bot.id] || [];
+            const latestHistory = history.length > 0 ? history[0] : null;
+            const currentActionType = latestHistory?.actionType || 'rocket';
+            
+            return (
             <div
               key={bot.id}
               className="bg-gray-800/80 rounded-xl p-4 sm:p-6 border border-gray-700/50 hover:border-gray-600/60 transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/20 hover:scale-[1.01] group"
@@ -321,8 +399,11 @@ export default function AdminReactionBots() {
                   <div className="flex items-center gap-2">
                     <Zap className="h-3 w-3 text-yellow-400" />
                     <span className="text-white font-medium text-sm capitalize">
-                      {bot.actionType || "Rocket"}
+                      {currentActionType}
                     </span>
+                    {history.length > 0 && (
+                      <span className="text-xs text-gray-500">(latest)</span>
+                    )}
                   </div>
                 </div>
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
@@ -379,12 +460,82 @@ export default function AdminReactionBots() {
                 </div>
               </div>
 
+              {/* History Section */}
+              <div className="border-t border-gray-700/30 pt-4 mb-4">
+                <button
+                  onClick={() => toggleBotExpansion(bot.id)}
+                  className="w-full flex items-center justify-between p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/40 transition-colors mb-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <History className="h-4 w-4 text-purple-400" />
+                    <span className="text-sm font-medium text-white">
+                      Transaction History ({botHistories[bot.id]?.length || bot.historyCount || 0} {botHistories[bot.id]?.length === 1 || bot.historyCount === 1 ? 'record' : 'records'})
+                    </span>
+                  </div>
+                  {expandedBots.has(bot.id) ? (
+                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+
+                {expandedBots.has(bot.id) && (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {loadingHistories.has(bot.id) ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400" />
+                      </div>
+                    ) : (botHistories[bot.id] || []).length === 0 ? (
+                      <div className="text-center py-8 text-gray-500 text-sm">No transaction history found</div>
+                    ) : (
+                      (botHistories[bot.id] || []).map((record) => (
+                        <div
+                          key={record.id}
+                          className="p-3 bg-gray-700/20 rounded-lg border border-gray-600/20 hover:bg-gray-700/30 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className="text-xs font-medium text-white">
+                                  {formatNumber(record.transectionAmount, 6)} SOL
+                                </span>
+                                <span className="text-xs text-gray-400">·</span>
+                                <span className="text-xs text-gray-400">
+                                  Planned: {formatNumber(record.reactionsPlanned)}
+                                </span>
+                                <span className="text-xs text-gray-400">·</span>
+                                <span className="text-xs text-gray-400">
+                                  Processed: {formatNumber(record.reactionsProcessed)}
+                                </span>
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 capitalize">
+                                  {record.actionType || 'rocket'}
+                                </span>
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  record.status === 'started' || record.status === 'running' 
+                                    ? 'bg-green-500/20 text-green-300' 
+                                    : record.status === 'completed'
+                                    ? 'bg-blue-500/20 text-blue-300'
+                                    : 'bg-gray-500/20 text-gray-300'
+                                } capitalize`}>
+                                  {record.status || 'started'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500">{formatDate(record.transectionDate)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Footer */}
               <div className="flex items-center justify-between pt-4 border-t border-gray-700/30">
-                {/* <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Activity className="h-3 w-3" />
-                  <span>Last Action: {bot.lastActionIndex ?? 0}</span>
-                </div> */}
+                  <span>History: {bot.historyCount || 0} records</span>
+                </div>
                 {bot.deletedAt && (
                   <div className="flex items-center gap-1 text-xs text-red-400">
                     <Trash2 className="h-3 w-3" />
@@ -397,7 +548,8 @@ export default function AdminReactionBots() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Empty State */}
