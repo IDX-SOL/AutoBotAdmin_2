@@ -70,7 +70,7 @@ interface GasFees {
   [key: string]: number | string;
 }
 
-interface BotDetailData extends Bot {
+interface BotDetailData extends Omit<Bot, 'gasFees'> {
   lastLogs?: LogEntry[];
   lastTrades?: TradeEntry[];
   warnings?: WarningEntry[];
