@@ -142,28 +142,28 @@ export interface AdminsResponse {
   admins: AdminUser[];
 }
 
-export interface HolderBot {
-  id: string;
-  botName?: string;
-  status: string;
-  tokenName?: string;
-  tokenSymbol?: string;
-  ownerWalletAddress?: string;
-  mintAddress?: string;
-  holdersProcessed?: number;
-  lastHolderWalletIndex?: number;
-  fundAdded?: boolean;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
-  user?: {
-    id?: string;
-    username?: string;
-    email?: string;
-    platform?: string;
-    device?: string;
-  };
-}
+// export interface HolderBot {
+//   id: string;
+//   botName?: string;
+//   status: string;
+//   tokenName?: string;
+//   tokenSymbol?: string;
+//   ownerWalletAddress?: string;
+//   mintAddress?: string;
+//   holdersProcessed?: number;
+//   lastHolderWalletIndex?: number;
+//   fundAdded?: boolean;
+//   createdAt: string;
+//   updatedAt: string;
+//   deletedAt?: string;
+//   user?: {
+//     id?: string;
+//     username?: string;
+//     email?: string;
+//     platform?: string;
+//     device?: string;
+//   };
+// }
 
 export interface HolderBotsResponse {
   bots: HolderBot[];
@@ -675,8 +675,8 @@ const adminApiService = {
     adminAxiosInstance.delete(`/admin/emails/templates/${templateId}`),
 
   // Holder Bots management
-  getHolderBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<HolderBotsResponse>> =>
-    adminAxiosInstance.get('/admin/holder-bots', { params }),
+  // getHolderBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<HolderBotsResponse>> =>
+  //   adminAxiosInstance.get('/admin/holder-bots', { params }),
   // Reaction Bots management
   getReactionBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<ReactionBotsResponse>> =>
     adminAxiosInstance.get('/admin/reaction-bots', { params }),
