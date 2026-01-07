@@ -580,7 +580,6 @@ const adminApiService = {
   getAdmins: (): Promise<AxiosResponse<AdminsResponse>> => 
     adminAxiosInstance.get('/admin/admins'),
   createAdmin: (adminData: CreateAdminPayload): Promise<AxiosResponse<AdminUser>> =>
-  createAdmin: (adminData: Partial<AdminUser>): Promise<AxiosResponse<AdminUser>> => 
     adminAxiosInstance.post('/admin/admins', adminData),
   updateAdmin: (adminId: string, adminData: Partial<AdminUser>): Promise<AxiosResponse<AdminUser>> => 
     adminAxiosInstance.put(`/admin/admins/${adminId}`, adminData),
