@@ -182,7 +182,6 @@ export interface ReactionBot {
   tokenSymbol?: string;
   ownerWalletAddress?: string;
   targetUrl?: string;
-  actionType?: string;
   reactionsPlanned?: number;
   reactionsProcessed?: number;
   totalActions?: number;
@@ -191,6 +190,7 @@ export interface ReactionBot {
   chain?: string;
   fundAdded?: boolean;
   FirstRechargeDone?: boolean;
+  historyCount?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
@@ -201,6 +201,20 @@ export interface ReactionBot {
     platform?: string;
     device?: string;
   };
+}
+
+export interface ReactionBotHistory {
+  id: number;
+  reactionBotId: number;
+  transectionAmount: number;
+  transectionDate: string;
+  reactionsPlanned: number;
+  reactionsProcessed: number;
+  status: string;
+  actionType: string;
+  createdAt: string;
+  updatedAt: string;
+  reactionBot?: ReactionBot;
 }
 
 export interface ReactionBotsResponse {
@@ -213,35 +227,8 @@ export interface ReactionBotsResponse {
   };
 }
 
-export interface ReactionBot {
-  id: string;
-  botName?: string;
-  status: string;
-  tokenName?: string;
-  tokenSymbol?: string;
-  ownerWalletAddress?: string;
-  targetUrl?: string;
-  actionType?: string;
-  reactionsPlanned?: number;
-  reactionsProcessed?: number;
-  totalActions?: number;
-  lastActionIndex?: number;
-  pairAddress?: string;
-  chain?: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
-  user?: {
-    id?: string;
-    username?: string;
-    email?: string;
-    platform?: string;
-    device?: string;
-  };
-}
-
-export interface ReactionBotsResponse {
-  bots: ReactionBot[];
+export interface ReactionBotHistoryResponse {
+  history: ReactionBotHistory[];
   pagination: {
     page: number;
     limit: number;
@@ -694,6 +681,8 @@ const adminApiService = {
   // Reaction Bots management
   getReactionBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<ReactionBotsResponse>> =>
     adminAxiosInstance.get('/admin/reaction-bots', { params }),
+  getReactionBotHistory: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<ReactionBotHistoryResponse>> =>
+    adminAxiosInstance.get('/admin/reaction-bots/history', { params }),
   // Wallet Balance Management
   getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> => 
     adminAxiosInstance.get('/wallet-balance/today'),
