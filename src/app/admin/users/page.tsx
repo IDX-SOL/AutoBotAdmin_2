@@ -18,6 +18,9 @@ import {
   Grid2X2,
   Smartphone,
   Monitor,
+  Users,
+  Heart,
+  Battery,
 } from "lucide-react";
 
 export default function AdminUsers() {
@@ -162,6 +165,36 @@ export default function AdminUsers() {
           </button>
         </div>
       </div>
+      <div className="mt-4 pt-4 border-t border-gray-700 grid grid-cols-2 gap-4">
+        <div className="flex items-center space-x-2">
+          <Bot className="h-4 w-4 text-blue-500" />
+          <div>
+            <p className="text-xs text-gray-400">Volume Bots</p>
+            <p className="text-sm font-semibold text-white">{user.totalBots || 0}</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Users className="h-4 w-4 text-green-500" />
+          <div>
+            <p className="text-xs text-gray-400">Holders Processed</p>
+            <p className="text-sm font-semibold text-white">{user.totalHoldersProcessed || 0}</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Heart className="h-4 w-4 text-pink-500" />
+          <div>
+            <p className="text-xs text-gray-400">Reactions Processed</p>
+            <p className="text-sm font-semibold text-white">{user.totalReactionsProcessed || 0}</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Battery className="h-4 w-4 text-yellow-500" />
+          <div>
+            <p className="text-xs text-gray-400">Recharged & Funded</p>
+            <p className="text-sm font-semibold text-white">{user.volumeBotsWithRechargeAndFund || 0}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -185,6 +218,15 @@ export default function AdminUsers() {
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Bots
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Holders Processed
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Reactions Processed
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Recharged & Funded
               </th>
               {/* <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Status
@@ -249,6 +291,24 @@ export default function AdminUsers() {
                     <Bot className="h-4 w-4 text-blue-500" />
                     <span className="text-sm text-white">{user.totalBots || 0}</span>
                     <span className="text-xs text-gray-400">bots</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-white">{user.totalHoldersProcessed || 0}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    <Heart className="h-4 w-4 text-pink-500" />
+                    <span className="text-sm text-white">{user.totalReactionsProcessed || 0}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    <Battery className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm text-white">{user.volumeBotsWithRechargeAndFund || 0}</span>
                   </div>
                 </td>
                 {/* <td className="px-6 py-4 whitespace-nowrap">
