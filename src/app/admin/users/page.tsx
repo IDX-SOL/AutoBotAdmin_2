@@ -210,9 +210,7 @@ export default function AdminUsers() {
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Platform
               </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Device
-              </th>
+              
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Campaign
               </th>
@@ -262,18 +260,14 @@ export default function AdminUsers() {
                         ) : (
                           <Monitor className="h-4 w-4 text-green-500" />
                         )}
-                        <span className="text-sm text-white capitalize">{user.platform}</span>
+                        <span className="text-sm text-white capitalize">{user.platform} ({user.device || 'Unknown'})</span>
                       </>
                     ) : (
                       <span className="text-sm text-gray-500">Unknown</span>
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-300">
-                    {user.device || 'Unknown'}
-                  </span>
-                </td>
+                
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     {user.campaignName ? (
@@ -347,12 +341,12 @@ export default function AdminUsers() {
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
-                    <button className="text-green-400 hover:text-green-300 transition-colors p-1">
+                    {/* <button className="text-green-400 hover:text-green-300 transition-colors p-1">
                       <Edit className="h-4 w-4" />
                     </button>
                     <button className="text-red-400 hover:text-red-300 transition-colors p-1">
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>
