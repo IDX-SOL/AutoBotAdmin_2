@@ -27,6 +27,9 @@ export interface User {
   isActive?: boolean;
   platform?: string;
   device?: string;
+  totalHoldersProcessed?: number;
+  totalReactionsProcessed?: number;
+  volumeBotsWithRechargeAndFund?: number;
 }
 
 export interface Bot {
