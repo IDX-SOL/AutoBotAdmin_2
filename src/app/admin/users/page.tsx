@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import AdminLayout from "../../../components/admin/AdminLayout";
+import { UsersFilterPopup, UsersFilterValues } from "../../../components/admin/UsersFilterPopup";
 import adminApiService, { User } from "../../../utils/adminApiService";
 import {
   User as UserIcon,
@@ -23,10 +24,13 @@ import {
   Battery,
 } from "lucide-react";
 
+const SEARCH_DEBOUNCE_MS = 400;
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
@@ -41,17 +45,36 @@ export default function AdminUsers() {
     total: 0,
     totalPages: 1
   });
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<UsersFilterValues | null>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
-      console.log("Fetching users with params:", { currentPage, searchTerm });
+      console.log("Fetching users with params:", { currentPage, debouncedSearchTerm, appliedFilters });
       
       // Pass parameters as an object instead of a string
-      const params = {
+      const params: Record<string, string | number | boolean> = {
         page: currentPage,
         limit: 20,
-        search: searchTerm
+        search: debouncedSearchTerm
       };
+      // Demo: send filter params to backend (backend will implement filtering)
+      if (appliedFilters) {
+        if (appliedFilters.recharged) params.recharged = true;
+        if (appliedFilters.campaign) params.campaign = true;
+        if (appliedFilters.holderGreaterThan1) params.holderGreaterThan1 = true;
+        if (appliedFilters.reactionGreaterThan1) params.reactionGreaterThan1 = true;
+        if (appliedFilters.botGreaterThan1) params.botGreaterThan1 = true;
+      }
 
       const response = await adminApiService.getUsers(params);
       
@@ -104,7 +127,8 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm]);
+    // Intentionally use debouncedSearchTerm only; searchTerm is for input only
+  }, [currentPage, debouncedSearchTerm, appliedFilters]);
 
   useEffect(() => {
     fetchUsers();
@@ -112,8 +136,8 @@ export default function AdminUsers() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setDebouncedSearchTerm(searchTerm);
     setCurrentPage(1);
-    fetchUsers();
   };
 
   const UserCard = ({ user }: { user: User }) => (
@@ -397,16 +421,6 @@ export default function AdminUsers() {
     </div>
   );
 
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -444,11 +458,21 @@ export default function AdminUsers() {
             </button>
             <button
               type="button"
+              onClick={() => setFilterOpen(true)}
               className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
             >
               <Filter className="h-4 w-4" />
               <span>Filter</span>
             </button>
+            <UsersFilterPopup
+              open={filterOpen}
+              onOpenChange={setFilterOpen}
+              onApply={(filters) => {
+                setAppliedFilters(filters);
+                setCurrentPage(1);
+              }}
+              initialFilters={appliedFilters ?? undefined}
+            />
           </form>
         </div>
 
@@ -481,31 +505,40 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        {/* Users Display */}
-        {viewMode === 'table' ? (
-          <UserTable />
+        {/* Loader / Content below search bar */}
+        {loading ? (
+          <div className="flex items-center justify-center py-24 bg-gray-800 rounded-xl border border-gray-700 min-h-[280px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+          </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {users.map((user) => (
-              <UserCard key={user.id} user={user} />
-            ))}
-          </div>
-        )}
+          <>
+            {/* Users Display */}
+            {viewMode === 'table' ? (
+              <UserTable />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {users.map((user) => (
+                  <UserCard key={user.id} user={user} />
+                ))}
+              </div>
+            )}
 
-        {/* Empty State */}
-        {users.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">No users found</h3>
-            <p className="text-gray-400">Try adjusting your search criteria</p>
-          </div>
-        )}
+            {/* Empty State */}
+            {users.length === 0 && (
+              <div className="text-center py-12">
+                <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No users found</h3>
+                <p className="text-gray-400">Try adjusting your search criteria</p>
+              </div>
+            )}
 
-        {/* Pagination */}
-        {users.length > 0 && (
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-            <Pagination />
-          </div>
+            {/* Pagination */}
+            {users.length > 0 && (
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <Pagination />
+              </div>
+            )}
+          </>
         )}
       </div>
     </AdminLayout>
