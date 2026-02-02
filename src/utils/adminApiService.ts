@@ -83,6 +83,15 @@ export interface LoginResponse {
   admin: AdminUser;
 }
 
+/** Optional filter params for GET /admin/users (backend implements filtering) */
+export interface UsersListFilterParams {
+  recharged?: boolean;
+  campaign?: boolean;
+  holderGreaterThan1?: boolean;
+  reactionGreaterThan1?: boolean;
+  botGreaterThan1?: boolean;
+}
+
 export interface UsersResponse {
   users: User[];
   pagination: {
