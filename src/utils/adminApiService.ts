@@ -482,6 +482,45 @@ export interface TokenBurnListResponse {
   };
 }
 
+// Recharge records (volume / holder / reaction bot recharges)
+export interface RechargeRecordItem {
+  id: number;
+  userId: number;
+  botType: 'volume' | 'holder' | 'reaction';
+  botId: number;
+  amount: number;
+  currency: string;
+  rechargeType: string | null;
+  deviceType: string | null;
+  platformFee: number | null;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+  user?: { id: number; username: string; email: string } | null;
+}
+
+export interface RechargeRecordsListResponse {
+  success: boolean;
+  data: {
+    records: RechargeRecordItem[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+    summary: {
+      totalRecords: number;
+      totalAmount: number;
+      totalPlatformFee: number;
+      byBotType: { volume: number; holder: number; reaction: number };
+    };
+  };
+}
+
+export interface RechargeRecordsStats {
+  totalRecords: number;
+  totalAmount: number;
+  totalPlatformFee: number;
+  lastRecordAt: string | null;
+  byBotType: Record<string, { count: number; totalAmount: number; totalFee: number }>;
+}
+
 // Create admin axios instance with different configuration
 const adminAxiosInstance: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
@@ -708,6 +747,12 @@ const adminApiService = {
     adminAxiosInstance.get('/admin/token-burns', { params }),
   getTokenBurnStats: (): Promise<AxiosResponse<{ success: boolean; data: TokenBurnSummary }>> =>
     adminAxiosInstance.get('/admin/token-burns/stats'),
+
+  // Recharge records (volume / holder / reaction bot recharges)
+  getRechargeRecords: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<RechargeRecordsListResponse>> =>
+    adminAxiosInstance.get('/admin/recharge-records', { params }),
+  getRechargeRecordsStats: (): Promise<AxiosResponse<{ success: boolean; data: RechargeRecordsStats }>> =>
+    adminAxiosInstance.get('/admin/recharge-records/stats'),
 
   // Email Automation
   getEmailStats: (): Promise<AxiosResponse<{ success: boolean; stats: EmailStats }>> =>
