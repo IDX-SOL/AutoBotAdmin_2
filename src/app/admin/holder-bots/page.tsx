@@ -233,6 +233,30 @@ export default function AdminHolderBots() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
                       <h3 className="text-xl font-bold text-white truncate">{bot.botName || "Holder Bot"}</h3>
+                      {getStatusBadge(bot.status)}
+                      {/* Fund Added Status Badge */}
+                      {bot.fundAdded !== undefined && (
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
+                            bot.fundAdded
+                              ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                              : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                          }`}
+                          title={bot.fundAdded ? "Funds have been added" : "Funds not yet added"}
+                        >
+                          {bot.fundAdded ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              Fund Added
+                            </>
+                          ) : (
+                            <>
+                              <Activity className="h-3 w-3" />
+                              Fund Not Added
+                            </>
+                          )}
+                        </span>
+                      )}
                     </div>
                     {bot.user?.email && (
                       <Link
@@ -371,4 +395,3 @@ export default function AdminHolderBots() {
     </AdminLayout>
   );
 }
-

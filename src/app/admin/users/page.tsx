@@ -22,6 +22,7 @@ import {
   Users,
   Heart,
   Battery,
+  MapPin,
 } from "lucide-react";
 
 const SEARCH_DEBOUNCE_MS = 400;
@@ -170,6 +171,10 @@ export default function AdminUsers() {
                   {user.device}
                 </span>
               )}
+              <span className="text-xs text-gray-500 flex items-center">
+                <MapPin className="h-3 w-3 inline mr-1 shrink-0" />
+                {user.country || 'N/A'} 
+              </span>
             </div>
           </div>
         </div>
@@ -232,7 +237,7 @@ export default function AdminUsers() {
                 User
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Platform
+                Platform & Location
               </th>
               
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
@@ -276,19 +281,25 @@ export default function AdminUsers() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-2">
-                    {user.platform ? (
-                      <>
-                        {user.platform === 'mobile' ? (
-                          <Smartphone className="h-4 w-4 text-blue-500" />
-                        ) : (
-                          <Monitor className="h-4 w-4 text-green-500" />
-                        )}
-                        <span className="text-sm text-white capitalize">{user.platform} ({user.device || 'Unknown'})</span>
-                      </>
-                    ) : (
-                      <span className="text-sm text-gray-500">Unknown</span>
-                    )}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center space-x-2">
+                      {user.platform ? (
+                        <>
+                          {user.platform === 'mobile' ? (
+                            <Smartphone className="h-4 w-4 text-blue-500 shrink-0" />
+                          ) : (
+                            <Monitor className="h-4 w-4 text-green-500 shrink-0" />
+                          )}
+                          <span className="text-sm text-white capitalize">{user.platform} ({user.device || 'Unknown'})</span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-gray-500">Unknown</span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-gray-400">
+                      <MapPin className="h-3 w-3 shrink-0" />
+                      <span>{user.country || 'N/A'}</span>
+                    </div>
                   </div>
                 </td>
                 

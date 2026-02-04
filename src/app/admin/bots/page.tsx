@@ -13,6 +13,7 @@ import {
   Trash2,
   Smartphone,
   Monitor,
+  MapPin,
   X,
   CheckCircle2,
   Play,
@@ -185,7 +186,7 @@ export default function AdminBots() {
       const { message, botstoppedData } = response.data;
 
       showSuccess(message);
-      setResponseDetails(botstoppedData || []);
+      setResponseDetails((botstoppedData || []) as typeof responseDetails);
       setResponseTitle('Bot Stop Results');
       setShowResponseModal(true);
       fetchBots(); // Refresh the list
@@ -210,7 +211,7 @@ export default function AdminBots() {
       const { message, botstartedData } = response.data;
 
       showSuccess(message);
-      setResponseDetails(botstartedData || []);
+      setResponseDetails((botstartedData || []) as typeof responseDetails);
       setResponseTitle('Bot Start Results');
       setShowResponseModal(true);
       fetchBots(); // Refresh the list
@@ -313,7 +314,7 @@ export default function AdminBots() {
               <Link href={`/admin/users/${bot.user?.id}`} className="text-xs text-blue-400 truncate block hover:text-blue-300 transition-colors">
                 <span className="hover:underline">{bot.user?.email || 'No description'}</span>
               </Link>
-              {(bot.user?.platform || bot.user?.device) && (
+              {(bot.user?.platform || bot.user?.device || bot.user?.country) && (
                 <div className="flex items-center gap-1 flex-wrap mt-1">
                   {bot.user?.platform && (
                     <span className="text-xs text-gray-400 flex items-center gap-1 px-1.5 py-0.5 bg-gray-700/40 rounded border border-gray-600/30">
@@ -330,6 +331,10 @@ export default function AdminBots() {
                       {bot.user.device}
                     </span>
                   )}
+                  <span className="text-xs text-gray-400 flex items-center gap-1 px-1.5 py-0.5 bg-gray-700/40 rounded border border-gray-600/30">
+                    <MapPin className="h-3 w-3 text-amber-400" />
+                    <span className="font-medium">{bot.user?.country || 'N/A'}</span>
+                  </span>
                 </div>
               )}
             </div>
@@ -943,4 +948,3 @@ export default function AdminBots() {
     </AdminLayout>
   );
 }
-

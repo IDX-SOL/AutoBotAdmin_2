@@ -454,9 +454,14 @@ export default function AdminDashboard() {
               <Users className="h-5 w-5 mr-2" />
               View All Users
             </button>
+            
             <button onClick={() => router.push('/admin/bots')} className="flex items-center justify-center p-4 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition-colors">
               <BotIcon className="h-5 w-5 mr-2" />
               Manage Bots
+            </button>
+            <button onClick={() => router.push('/admin/holder-bots')} className="flex items-center justify-center p-4 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition-colors">
+              <BotIcon className="h-5 w-5 mr-2" />
+              Manage Holder Bots
             </button>
             <button onClick={() => router.push('/admin/campaigns')} className="flex items-center justify-center p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium transition-colors">
               <TrendingUp className="h-5 w-5 mr-2" />

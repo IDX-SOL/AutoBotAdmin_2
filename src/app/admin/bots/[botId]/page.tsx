@@ -20,6 +20,7 @@ import {
   User,
   Smartphone,
   Monitor,
+  MapPin,
   ArrowLeft,
   Zap,
   Shield,
@@ -70,7 +71,7 @@ interface GasFees {
   [key: string]: number | string;
 }
 
-interface BotDetailData extends Bot {
+interface BotDetailData extends Omit<Bot, 'gasFees'> {
   lastLogs?: LogEntry[];
   lastTrades?: TradeEntry[];
   warnings?: WarningEntry[];
@@ -429,6 +430,13 @@ export default function BotDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-gray-400">Device:</span>
                         <span className="text-white">{bot.user?.device || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Location:</span>
+                        <span className="text-white flex items-center gap-1">
+                          <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+                          {bot.user?.country || 'N/A'}
+                        </span>
                       </div>
                     </div>
                   </div>

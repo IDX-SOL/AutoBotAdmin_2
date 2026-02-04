@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { 
-  BarChart3, 
-  Users, 
-  Bot, 
-  LogOut, 
-  Menu, 
+import {
+  BarChart3,
+  Users,
+  Bot,
+  LogOut,
+  Menu,
   X,
   Shield,
   TrendingUp,
