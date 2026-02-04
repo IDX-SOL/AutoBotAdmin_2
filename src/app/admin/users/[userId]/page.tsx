@@ -15,6 +15,7 @@ import {
   X,
   Smartphone,
   Monitor,
+  MapPin,
   Settings,
   RefreshCw,
   Award,
@@ -328,6 +329,13 @@ export default function UserDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-gray-400">Device:</span>
                         <span className="text-white">{user.device || 'Unknown'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Location:</span>
+                        <span className="text-white flex items-center gap-1">
+                          <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+                          {user.country || 'N/A'}
+                        </span>
                       </div>
                     </div>
                   </div>

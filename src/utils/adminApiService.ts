@@ -27,6 +27,7 @@ export interface User {
   isActive?: boolean;
   platform?: string;
   device?: string;
+  country?: string;
   totalHoldersProcessed?: number;
   totalReactionsProcessed?: number;
   volumeBotsWithRechargeAndFund?: number;
@@ -54,10 +55,25 @@ export interface Bot {
     email?: string;
     platform?: string;
     device?: string;
+    country?: string;
   };
   // Optional fields that might not be returned by the backend
   lastTradeAt?: string;
   firstRechageDate?: boolean;
+  firstFundAdd?: boolean;
+  lastLogs?: Array<{
+    timestamp: string;
+    message: string;
+    level?: string;
+  }>;
+  lastTrades?: Array<{
+    id: string;
+    timestamp: string;
+    tradeType: string;
+    amount: number;
+    token: string;
+    transactionSignature?: string;
+  }>;
 }
 
 export interface DashboardStats {
@@ -601,6 +617,8 @@ const adminApiService = {
   // Bots management
   getBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<BotsResponse>> => 
     adminAxiosInstance.get('/admin/bots', { params }),
+  getBotsWithLastData: (params?: Record<string, string | number | boolean>): Promise<AxiosResponse<BotsResponse>> => 
+    adminAxiosInstance.get('/admin/bots', { params }),
   getBot: (botId: string): Promise<AxiosResponse<Bot>> => 
     adminAxiosInstance.get(`/admin/bots/${botId}`),
   updateBot: (botId: string, botData: Partial<Bot>): Promise<AxiosResponse<Bot>> => 
@@ -611,6 +629,62 @@ const adminApiService = {
     adminAxiosInstance.get(`/admin/bots/${botId}/trade-wallets`),
   restoreBot: (botId: string): Promise<AxiosResponse<Bot>> => 
     adminAxiosInstance.post(`/admin/bots/${botId}/restore`),
+  stopRunningBot: (): Promise<AxiosResponse<{ message: string; botstoppedData: Array<{
+    message: string;
+    botId: string;
+    botName?: string;
+    tokenAddress: string;
+    engine: string;
+    ownerWalletAddress: string;
+    status: string;
+    createdAt?: string;
+    updatedAt?: string;
+    lastLogs?: Array<{ timestamp: string; message: string }>;
+    lastTrades?: Array<{
+      id: string;
+      timestamp: string;
+      tradeType: string;
+      amount: number;
+      token: string;
+      transactionSignature?: string;
+    }>;
+    tokenName?: string;
+    tokenSymbol?: string;
+    user?: {
+      id: string;
+      username: string;
+      email: string;
+    };
+  }> }>> => 
+    adminAxiosInstance.post('/admin/bots/stop-all'),
+  startRunningBot: (): Promise<AxiosResponse<{ message: string; botstartedData: Array<{
+    message: string;
+    botId: string;
+    botName?: string;
+    tokenAddress: string;
+    engine: string;
+    ownerWalletAddress: string;
+    status: string;
+    createdAt?: string;
+    updatedAt?: string;
+    lastLogs?: Array<{ timestamp: string; message: string }>;
+    lastTrades?: Array<{
+      id: string;
+      timestamp: string;
+      tradeType: string;
+      amount: number;
+      token: string;
+      transactionSignature?: string;
+    }>;
+    tokenName?: string;
+    tokenSymbol?: string;
+    user?: {
+      id: string;
+      username: string;
+      email: string;
+    };
+  }> }>> => 
+    adminAxiosInstance.post('/admin/bots/start-all'),
   
   // Holder bots management
   getHolderBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<HolderBotsResponse>> => 
