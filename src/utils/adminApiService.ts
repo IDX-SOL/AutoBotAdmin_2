@@ -695,7 +695,7 @@ const adminApiService = {
       email: string;
     };
   }> }>> => 
-    adminAxiosInstance.post('/admin/bots/stop-all'),
+    adminAxiosInstance.post('/admin/bots/stop-running'),
   startRunningBot: (): Promise<AxiosResponse<{ message: string; botstartedData: Array<{
     message: string;
     botId: string;
@@ -723,7 +723,7 @@ const adminApiService = {
       email: string;
     };
   }> }>> => 
-    adminAxiosInstance.post('/admin/bots/start-all'),
+    adminAxiosInstance.post('/admin/bots/start-running'),
   
   // Holder bots management
   getHolderBots: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<HolderBotsResponse>> => 
