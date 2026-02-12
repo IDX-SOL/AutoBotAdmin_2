@@ -96,6 +96,9 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   token: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  expiresAt?: string;
   admin: AdminUser;
 }
 
@@ -604,29 +607,105 @@ walletAxiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle admin authentication
+// Response interceptor: on 401 try refresh token, then retry or redirect to login
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+const onRefreshed = (token: string) => {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
 adminAxiosInstance.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Admin token expired or invalid
+  (response: AxiosResponse) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      if (error.response?.status === 401 && typeof window !== 'undefined') {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminData');
+        localStorage.removeItem('adminRefreshToken');
+        window.location.href = '/admin/login';
+      }
+      return Promise.reject(error);
+    }
+
+    const isRefreshRequest = originalRequest.url?.includes('/admin/refresh');
+    if (isRefreshRequest) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminData');
-        // Redirect to admin login
+        localStorage.removeItem('adminRefreshToken');
         window.location.href = '/admin/login';
       }
+      return Promise.reject(error);
     }
+
+    if (typeof window === 'undefined' || !localStorage.getItem('adminRefreshToken')) {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminData');
+      window.location.href = '/admin/login';
+      return Promise.reject(error);
+    }
+
+    if (isRefreshing) {
+      return new Promise((resolve) => {
+        addRefreshSubscriber((token: string) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          resolve(adminAxiosInstance(originalRequest));
+        });
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const refresh = localStorage.getItem('adminRefreshToken');
+      const res = await adminAxiosInstance.post('/admin/refresh', { refreshToken: refresh });
+      const { token, refreshToken: newRefresh, admin } = res.data;
+      if (token && typeof window !== 'undefined') {
+        localStorage.setItem('adminToken', token);
+        if (newRefresh) localStorage.setItem('adminRefreshToken', newRefresh);
+        if (admin) localStorage.setItem('adminData', JSON.stringify(admin));
+        onRefreshed(token);
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return adminAxiosInstance(originalRequest);
+      }
+    } catch (refreshError) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminData');
+        localStorage.removeItem('adminRefreshToken');
+        window.location.href = '/admin/login';
+      }
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
+
     return Promise.reject(error);
   }
 );
 
 // Admin API service methods
 const adminApiService = {
-  // Authentication
-  login: (credentials: LoginCredentials): Promise<AxiosResponse<LoginResponse>> => 
+  // Authentication (email + OTP)
+  sendOtp: (email: string): Promise<AxiosResponse<{ message: string; email?: string }>> =>
+    adminAxiosInstance.post('/admin/send-otp', { email }),
+  verifyOtp: (email: string, otp: string): Promise<AxiosResponse<LoginResponse>> =>
+    adminAxiosInstance.post('/admin/verify-otp', { email, otp }),
+  refreshToken: (): Promise<AxiosResponse<LoginResponse>> => {
+    const refresh = typeof window !== 'undefined' ? localStorage.getItem('adminRefreshToken') : null;
+    return adminAxiosInstance.post('/admin/refresh', { refreshToken: refresh || '' });
+  },
+  // Legacy username/password login (also returns access + refresh)
+  login: (credentials: LoginCredentials): Promise<AxiosResponse<LoginResponse>> =>
     adminAxiosInstance.post('/admin/login', credentials),
   
   // Dashboard
@@ -769,6 +848,16 @@ const adminApiService = {
   getRechargeRecordsStats: (): Promise<AxiosResponse<{ success: boolean; data: RechargeRecordsStats }>> =>
     adminAxiosInstance.get('/admin/recharge-records/stats'),
 
+  // Token revocation & kill switch
+  getKillSwitchStatus: (): Promise<AxiosResponse<{ success: boolean; enabled: boolean }>> =>
+    adminAxiosInstance.get('/admin/kill-switch'),
+  setKillSwitch: (enabled: boolean): Promise<AxiosResponse<{ success: boolean; enabled: boolean }>> =>
+    adminAxiosInstance.post('/admin/kill-switch', { enabled }),
+  revokeUserTokens: (userId: number): Promise<AxiosResponse<{ success: boolean; message?: string }>> =>
+    adminAxiosInstance.post('/admin/revoke-user-tokens', { userId }),
+  revokeToken: (token: string): Promise<AxiosResponse<{ success: boolean; message?: string }>> =>
+    adminAxiosInstance.post('/admin/revoke-token', { token }),
+
   // Email Automation
   getEmailStats: (): Promise<AxiosResponse<{ success: boolean; stats: EmailStats }>> => 
     adminAxiosInstance.get('/admin/emails/stats'),
@@ -859,6 +948,7 @@ const adminApiService = {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
+      localStorage.removeItem('adminRefreshToken');
       window.location.href = '/admin/login';
     }
   },
