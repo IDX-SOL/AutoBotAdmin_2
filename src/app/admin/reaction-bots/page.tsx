@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "../../../components/admin/AdminLayout";
-import adminApiService, { ReactionBot, ReactionBotHistory } from "../../../utils/adminApiService";
+import adminApiService, { ReactionBot } from "../../../utils/adminApiService";
 import {
   Activity,
   Copy,
@@ -45,9 +45,7 @@ const formatNumber = (value?: number | null, maximumFractionDigits = 4) => {
 
 export default function AdminReactionBots() {
   const [bots, setBots] = useState<ReactionBot[]>([]);
-  const [botHistories, setBotHistories] = useState<Record<string, ReactionBotHistory[]>>({});
   const [expandedBots, setExpandedBots] = useState<Set<string>>(new Set());
-  const [loadingHistories, setLoadingHistories] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [deletedFilter, setDeletedFilter] = useState("");
@@ -113,37 +111,6 @@ export default function AdminReactionBots() {
     }
   }, [currentPage, statusFilter, deletedFilter, showError]);
 
-  const fetchBotHistory = useCallback(async (botId: string) => {
-    if (botHistories[botId]) {
-      // History already loaded
-      return;
-    }
-
-    setLoadingHistories((prev) => new Set(prev).add(botId));
-    try {
-      const response = await adminApiService.getReactionBotHistory({ botId, limit: 100 });
-      if (response && response.data) {
-        const history = response.data.history || [];
-        setBotHistories((prev) => ({
-          ...prev,
-          [botId]: history,
-        }));
-      }
-    } catch (err) {
-      console.error(`Error fetching history for bot ${botId}:`, err);
-      setBotHistories((prev) => ({
-        ...prev,
-        [botId]: [],
-      }));
-    } finally {
-      setLoadingHistories((prev) => {
-        const next = new Set(prev);
-        next.delete(botId);
-        return next;
-      });
-    }
-  }, [botHistories]);
-
   useEffect(() => {
     fetchBots();
   }, [fetchBots]);
@@ -155,8 +122,6 @@ export default function AdminReactionBots() {
         next.delete(botId);
       } else {
         next.add(botId);
-        // Fetch history when expanding
-        fetchBotHistory(botId);
       }
       return next;
     });
@@ -294,9 +259,9 @@ export default function AdminReactionBots() {
         {/* Bots Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {bots.map((bot) => {
-            const history = botHistories[bot.id] || [];
-            const latestHistory = history.length > 0 ? history[0] : null;
-            const currentActionType = latestHistory?.actionType || 'rocket';
+            const rechargeRecords = bot.recharge?.records ?? [];
+            const latestRecord = rechargeRecords.length > 0 ? rechargeRecords[0] : null;
+            const currentActionType = latestRecord?.metadata?.actionType || 'rocket';
             
             return (
             <div
@@ -401,7 +366,7 @@ export default function AdminReactionBots() {
                     <span className="text-white font-medium text-sm capitalize">
                       {currentActionType}
                     </span>
-                    {history.length > 0 && (
+                    {rechargeRecords.length > 0 && (
                       <span className="text-xs text-gray-500">(latest)</span>
                     )}
                   </div>
@@ -469,7 +434,7 @@ export default function AdminReactionBots() {
                   <div className="flex items-center gap-2">
                     <History className="h-4 w-4 text-purple-400" />
                     <span className="text-sm font-medium text-white">
-                      Transaction History ({botHistories[bot.id]?.length || bot.historyCount || 0} {botHistories[bot.id]?.length === 1 || bot.historyCount === 1 ? 'record' : 'records'})
+                      Transaction History ({rechargeRecords.length} {rechargeRecords.length === 1 ? 'record' : 'records'})
                     </span>
                   </div>
                   {expandedBots.has(bot.id) ? (
@@ -481,14 +446,10 @@ export default function AdminReactionBots() {
 
                 {expandedBots.has(bot.id) && (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {loadingHistories.has(bot.id) ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400" />
-                      </div>
-                    ) : (botHistories[bot.id] || []).length === 0 ? (
+                    {rechargeRecords.length === 0 ? (
                       <div className="text-center py-8 text-gray-500 text-sm">No transaction history found</div>
                     ) : (
-                      (botHistories[bot.id] || []).map((record) => (
+                      rechargeRecords.map((record) => (
                         <div
                           key={record.id}
                           className="p-3 bg-gray-700/20 rounded-lg border border-gray-600/20 hover:bg-gray-700/30 transition-colors"
@@ -497,30 +458,20 @@ export default function AdminReactionBots() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <span className="text-xs font-medium text-white">
-                                  {formatNumber(record.transectionAmount, 6)} SOL
+                                  {formatNumber(Number(record.amount), 6)} {record.currency}
                                 </span>
                                 <span className="text-xs text-gray-400">·</span>
                                 <span className="text-xs text-gray-400">
-                                  Planned: {formatNumber(record.reactionsPlanned)}
-                                </span>
-                                <span className="text-xs text-gray-400">·</span>
-                                <span className="text-xs text-gray-400">
-                                  Processed: {formatNumber(record.reactionsProcessed)}
+                                  Planned: {formatNumber(record.metadata?.reactionsPlanned)}
                                 </span>
                                 <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-300 capitalize">
-                                  {record.actionType || 'rocket'}
+                                  {record.metadata?.actionType || 'rocket'}
                                 </span>
-                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                                  record.status === 'started' || record.status === 'running' 
-                                    ? 'bg-green-500/20 text-green-300' 
-                                    : record.status === 'completed'
-                                    ? 'bg-blue-500/20 text-blue-300'
-                                    : 'bg-gray-500/20 text-gray-300'
-                                } capitalize`}>
-                                  {record.status || 'started'}
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-300">
+                                  {record.rechargeType}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-500">{formatDate(record.transectionDate)}</p>
+                              <p className="text-xs text-gray-500">{formatDate(record.createdAt)}</p>
                             </div>
                           </div>
                         </div>
@@ -534,7 +485,7 @@ export default function AdminReactionBots() {
               <div className="flex items-center justify-between pt-4 border-t border-gray-700/30">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Activity className="h-3 w-3" />
-                  <span>History: {bot.historyCount || 0} records</span>
+                  <span>History: {bot.recharge?.rechargeCount ?? bot.recharge?.records?.length ?? 0} records</span>
                 </div>
                 {bot.deletedAt && (
                   <div className="flex items-center gap-1 text-xs text-red-400">

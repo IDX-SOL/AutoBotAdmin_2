@@ -202,6 +202,35 @@ export interface HolderBotsResponse {
     totalPages: number;
   };
 }
+/** Recharge record from bot.recharge.records (transaction history) */
+export interface RechargeRecord {
+  id: number;
+  userId: number;
+  botType: string;
+  botId: number;
+  amount: string;
+  currency: string;
+  rechargeType: string;
+  deviceType?: string | null;
+  platformFee: string;
+  metadata?: {
+    reactionsPlanned?: number;
+    actionType?: string;
+    requiredUsd?: number;
+    solPriceUsd?: number;
+    usedRechargePrice?: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BotRecharge {
+  records: RechargeRecord[];
+  totalRecharged: number;
+  lastRechargeDate?: string | null;
+  rechargeCount: number;
+}
+
 export interface ReactionBot {
   id: string;
   botName?: string;
@@ -219,6 +248,8 @@ export interface ReactionBot {
   fundAdded?: boolean;
   FirstRechargeDone?: boolean;
   historyCount?: number;
+  hasRecharge?: boolean;
+  recharge?: BotRecharge;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
