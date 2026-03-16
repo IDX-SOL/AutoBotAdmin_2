@@ -135,6 +135,7 @@ export interface HolderBot {
   id: number;
   userId?: number;
   ownerWalletAddress: string;
+  middleWalletAddress: string;
   mintAddress: string;
   perHolderTokenAmount?: number;
   holdersProcessed?: number;

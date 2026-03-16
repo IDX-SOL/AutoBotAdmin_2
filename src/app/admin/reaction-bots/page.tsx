@@ -353,11 +353,15 @@ export default function AdminReactionBots() {
                   )}
                 </div>
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-                  <p className="text-xs text-gray-400 mb-2 font-medium">middle wallet</p>
+                  <p className="text-xs text-gray-400 mb-2 font-medium">Action Type</p>
                   <div className="flex items-center gap-2">
+                    <Zap className="h-3 w-3 text-yellow-400" />
                     <span className="text-white font-medium text-sm capitalize">
-                      {bot.middleWalletAddress ? `${bot.middleWalletAddress.slice(0, 6)}...${bot.middleWalletAddress.slice(-6)}` : "N/A"}
+                      {currentActionType}
                     </span>
+                    {rechargeRecords.length > 0 && (
+                      <span className="text-xs text-gray-500">(latest)</span>
+                    )}
                   </div>
                 </div>
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">

@@ -326,6 +326,29 @@ export default function AdminHolderBots() {
                       </Link>
                     </div>
                   </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-300 font-mono truncate flex-1">
+                      {bot.middleWalletAddress ? `${bot.middleWalletAddress.slice(0, 6)}...${bot.middleWalletAddress.slice(-6)}` : "N/A"}
+                    </span>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                          onClick={() => bot.middleWalletAddress && handleCopy(bot.middleWalletAddress, "middleWallet")}
+                        className={`p-1 rounded transition-colors ${copiedField === "middleWallet" ? "text-green-400" : "text-gray-400 hover:text-white"}`}
+                        title="Copy middle wallet"
+                        disabled={!bot.middleWalletAddress}
+                      >
+                        {copiedField === "middleWallet" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      </button>
+                      <Link
+                        href={`https://solscan.io/address/${bot.middleWalletAddress}`}
+                        target="_blank"
+                        className="p-1 text-gray-400 hover:text-blue-400 hover:bg-gray-600/50 rounded transition-colors"
+                        title="View on Solscan"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
                   <p className="text-xs text-gray-400 mb-2 font-medium">Mint Address</p>
