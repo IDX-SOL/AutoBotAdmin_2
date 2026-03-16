@@ -308,9 +308,9 @@ export default function AdminReactionBots() {
                       )}
                     </div>
                     <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/60 border border-gray-700/50 rounded">
-                      <div className={`w-2 h-2 rounded-full ${bot?.FirstRechargeDone ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${bot?.hasRecharge ? 'bg-green-400' : 'bg-red-400'}`}></div>
                       <span className="text-xs text-gray-300">Recharge</span>
-                      {bot?.FirstRechargeDone ? (
+                      {bot?.hasRecharge ? (
                         <CheckCircle2 className="h-3 w-3 text-green-400" />
                       ) : (
                         <X className="h-3 w-3 text-red-400" />
