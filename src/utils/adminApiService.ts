@@ -241,6 +241,7 @@ export interface ReactionBot {
   tokenName?: string;
   tokenSymbol?: string;
   ownerWalletAddress?: string;
+  middleWalletAddress?: string;
   targetUrl?: string;
   reactionsPlanned?: number;
   reactionsProcessed?: number;

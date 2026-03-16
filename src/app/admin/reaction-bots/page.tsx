@@ -323,13 +323,6 @@ export default function AdminReactionBots() {
                   </div>
                 </div>
                 {/* Status */}
-                {/* <div className="flex flex-col gap-2 lg:items-end">
-                  {getStatusBadge(bot.status)}
-                  <div className="flex flex-col gap-1 text-xs text-gray-400">
-                    <div>Created: {new Date(bot.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
-                    <div>Updated: {new Date(bot.updatedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
-                  </div>
-                </div> */}
               </div>
 
               {/* Stats */}
@@ -360,15 +353,11 @@ export default function AdminReactionBots() {
                   )}
                 </div>
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
-                  <p className="text-xs text-gray-400 mb-2 font-medium">Action Type</p>
+                  <p className="text-xs text-gray-400 mb-2 font-medium">middle wallet</p>
                   <div className="flex items-center gap-2">
-                    <Zap className="h-3 w-3 text-yellow-400" />
                     <span className="text-white font-medium text-sm capitalize">
-                      {currentActionType}
+                      {bot.middleWalletAddress ? `${bot.middleWalletAddress.slice(0, 6)}...${bot.middleWalletAddress.slice(-6)}` : "N/A"}
                     </span>
-                    {rechargeRecords.length > 0 && (
-                      <span className="text-xs text-gray-500">(latest)</span>
-                    )}
                   </div>
                 </div>
                 <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 hover:bg-gray-700/40 transition-colors">
