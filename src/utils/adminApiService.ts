@@ -549,6 +549,133 @@ export interface TokenBurnListResponse {
   };
 }
 
+// Token creation activity
+export interface TokenCreationRecord {
+  id: number;
+  mintAddress: string;
+  tokenName: string;
+  tokenSymbol: string;
+  payerPublicKey: string;
+  creatorAddress: string;
+  metadataUri: string | null;
+  imageUri: string | null;
+  decimals: number;
+  initialSupply: string;
+  rawAmount: string;
+  vanityPrefix: string | null;
+  vanitySuffix: string | null;
+  freezeAuthorityEnabled: boolean;
+  revokeMintAuthority: boolean;
+  revokeFreezeAuthority: boolean;
+  immutableMetadata: boolean;
+  multiWallet: boolean;
+  distribution: unknown[];
+  authorities: Record<string, unknown>;
+  socials: Record<string, unknown>;
+  description: string | null;
+  tags: string[];
+  metadataIncluded: boolean;
+  associatedTokenAddress: string | null;
+  recentBlockhash: string | null;
+  lastValidBlockHeight: number | null;
+  transactionBase64: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TokenCreationsListResponse {
+  success: boolean;
+  data: TokenCreationRecord[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+// Liquidity pools created/initialized by admin flow (e.g. Raydium pools)
+export interface LiquidityPoolRecord {
+  id: number;
+  poolAddress: string | null;
+  baseTokenMint: string;
+  baseTokenSymbol: string;
+  baseTokenName: string | null;
+  baseTokenDecimals: number;
+  quoteTokenMint: string;
+  quoteTokenSymbol: string;
+  quoteTokenName: string;
+  quoteTokenDecimals: number;
+  creatorWallet: string;
+  userId: number | null;
+  initialBaseAmount: string;
+  initialQuoteAmount: string;
+  feeTier: string;
+  poolState: string;
+  initializeTxSignature: string | null;
+  addLiquidityTxSignature: string | null;
+  poolType: string;
+  slippage: number;
+  creationFee: string;
+  priorityFee: string;
+  lpTokenAmount: string | null;
+  metadata: {
+    estimatedTotalSOL?: number;
+    baseTokenLogo?: string | null;
+    quoteTokenLogo?: string | null;
+    originalSlippageValue?: number;
+    slippagePercentage?: string;
+  } | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LiquidityPoolsListResponse {
+  success: boolean;
+  data: LiquidityPoolRecord[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+// Liquidity action records (add/remove liquidity, revoke authorities, etc.)
+export type LiquidityActionType =
+  | 'ADD_LIQUIDITY'
+  | 'REMOVE_LIQUIDITY'
+  | 'REVOKE_MINT_AUTHORITY'
+  | 'REVOKE_FREEZE_AUTHORITY'
+  | string;
+
+export interface LiquidityActionRecord {
+  id: number;
+  userId: number | null;
+  actionType: LiquidityActionType;
+  pairAddress: string;
+  tokenMintAddress: string | null;
+  signature: string;
+  createdAt: string;
+  updatedAt: string;
+
+  // Optional fields that may exist depending on backend implementation.
+  // Used for computing "total recharge = 0.1 * total SOL".
+  solAmount?: number | string | null;
+}
+
+export interface LiquidityActionRecordsListResponse {
+  success: boolean;
+  data: LiquidityActionRecord[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 // Recharge records (volume / holder / reaction bot recharges)
 export interface RechargeRecordItem {
   id: number;
@@ -874,6 +1001,37 @@ const adminApiService = {
     adminAxiosInstance.get('/admin/token-burns', { params }),
   getTokenBurnStats: (): Promise<AxiosResponse<{ success: boolean; data: TokenBurnSummary }>> =>
     adminAxiosInstance.get('/admin/token-burns/stats'),
+  getTokenCreations: (
+    params?: string | Record<string, string | number | boolean> | URLSearchParams
+  ): Promise<AxiosResponse<TokenCreationsListResponse>> =>
+    adminAxiosInstance.get('/admin/token-creations', { params }),
+
+  // Liquidity pools
+  getLiquidityPools: (
+    params?: string | Record<string, string | number | boolean> | URLSearchParams
+  ): Promise<AxiosResponse<LiquidityPoolsListResponse>> =>
+    adminAxiosInstance.get('/admin/liquidity-pools', { params }),
+
+  // Liquidity action records
+  getAddLiquidityActionRecords: (
+    params?: string | Record<string, string | number | boolean> | URLSearchParams
+  ): Promise<AxiosResponse<LiquidityActionRecordsListResponse>> =>
+    adminAxiosInstance.get('/admin/liquidity-action-records/add-liquidity', { params }),
+
+  getRemoveLiquidityActionRecords: (
+    params?: string | Record<string, string | number | boolean> | URLSearchParams
+  ): Promise<AxiosResponse<LiquidityActionRecordsListResponse>> =>
+    adminAxiosInstance.get('/admin/liquidity-action-records/remove-liquidity', { params }),
+
+  getRevokeMintAuthorityActionRecords: (
+    params?: string | Record<string, string | number | boolean> | URLSearchParams
+  ): Promise<AxiosResponse<LiquidityActionRecordsListResponse>> =>
+    adminAxiosInstance.get('/admin/liquidity-action-records/revoke-mint-authority', { params }),
+
+  getRevokeFreezeAuthorityActionRecords: (
+    params?: string | Record<string, string | number | boolean> | URLSearchParams
+  ): Promise<AxiosResponse<LiquidityActionRecordsListResponse>> =>
+    adminAxiosInstance.get('/admin/liquidity-action-records/revoke-freeze-authority', { params }),
 
   // Recharge records (volume / holder / reaction bot recharges)
   getRechargeRecords: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<RechargeRecordsListResponse>> =>
@@ -959,7 +1117,7 @@ const adminApiService = {
   checkWalletsInDateRange: (startDateTime: string, endDateTime: string): Promise<AxiosResponse<unknown>> => 
     walletAxiosInstance.post('/wallet-balance/check-date-range', { startDateTime, endDateTime }),
   checkWalletsInDateRangeStream: (startDateTime: string, endDateTime: string): EventSource => {
-    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io';
+    const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
     
     // Create EventSource for Server-Sent Events
     // Note: EventSource doesn't support custom headers, so we'll need to handle auth differently
