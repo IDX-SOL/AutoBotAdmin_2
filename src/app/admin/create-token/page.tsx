@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { Check, RefreshCw } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import adminApiService, { TokenCreationRecord, TokenCreationsListResponse } from '@/utils/adminApiService';
 import { Badge } from '@/components/ui/badge';
@@ -155,8 +155,19 @@ export default function CreateTokenPage() {
                     <tr key={c.id} className="hover:bg-gray-800/40">
                       <td className="px-4 py-4">
                         <div className="flex items-start gap-3">
-                          <div className="mt-0.5 h-9 w-9 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-300">
+                          <div className="mt-0.5 relative h-9 w-9 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-300">
                             {c.tokenSymbol?.slice(0, 2) || 'TK'}
+                            <span
+                              className="absolute -top-1 -right-1"
+                              title={c.transactionBase64 != null ? 'Transaction base64 present' : 'Transaction base64 missing'}
+                              aria-label={c.transactionBase64 != null ? 'Transaction base64 present' : 'Transaction base64 missing'}
+                            >
+                              <Check
+                                className={`h-4 w-4 ${
+                                  c.transactionBase64 != null ? 'text-green-400' : 'text-gray-500'
+                                }`}
+                              />
+                            </span>
                           </div>
                           <div>
                             <p className="font-semibold text-white">
