@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import { UsersFilterPopup, UsersFilterValues } from "../../../components/admin/UsersFilterPopup";
+import { RechargeDetailsPopup } from "../../../components/admin/RechargeDetailsPopup";
 import adminApiService, { User } from "../../../utils/adminApiService";
 import {
   User as UserIcon,
@@ -27,6 +28,13 @@ import {
 
 const SEARCH_DEBOUNCE_MS = 400;
 
+const formatRechargeAmount = (value?: number | null) => {
+  if (value === null || value === undefined) return "—";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return n.toLocaleString("en-IN", { maximumFractionDigits: 6 });
+};
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +56,21 @@ export default function AdminUsers() {
   });
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<UsersFilterValues | null>(null);
+
+  const [rechargeDetailsOpen, setRechargeDetailsOpen] = useState(false);
+  const [rechargeDetailsUserId, setRechargeDetailsUserId] = useState<number | null>(null);
+
+  const openRechargeDetails = (userId: string) => {
+    const parsed = parseInt(userId, 10);
+    if (!Number.isFinite(parsed)) return;
+    setRechargeDetailsUserId(parsed);
+    setRechargeDetailsOpen(true);
+  };
+
+  const handleRechargePopupOpenChange = (open: boolean) => {
+    setRechargeDetailsOpen(open);
+    if (!open) setRechargeDetailsUserId(null);
+  };
 
   // Debounce search input
   useEffect(() => {
@@ -255,6 +278,15 @@ export default function AdminUsers() {
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Recharged & Funded
               </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Total Recharge Amount (SOL Eq.)
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Total Platform Fee (SOL Eq.)
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Recharge Details
+              </th>
               {/* <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Status
               </th> */}
@@ -339,6 +371,29 @@ export default function AdminUsers() {
                     <Battery className="h-4 w-4 text-yellow-500" />
                     <span className="text-sm text-white">{user.volumeBotsWithRechargeAndFund || 0}</span>
                   </div>
+                </td>
+
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm text-white font-medium">
+                    {formatRechargeAmount(user.totalRechargeAmount)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm text-white font-medium">
+                    {formatRechargeAmount(user.totalPlatformFee)}
+                  </span>
+                </td>
+
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <button
+                    type="button"
+                    onClick={() => openRechargeDetails(user.id)}
+                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors p-1"
+                    title="View recharge details"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span className="text-xs">View</span>
+                  </button>
                 </td>
                 {/* <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -552,6 +607,13 @@ export default function AdminUsers() {
           </>
         )}
       </div>
+      {rechargeDetailsUserId != null && (
+        <RechargeDetailsPopup
+          open={rechargeDetailsOpen}
+          onOpenChange={handleRechargePopupOpenChange}
+          userId={rechargeDetailsUserId}
+        />
+      )}
     </AdminLayout>
   );
 } 
