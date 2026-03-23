@@ -20,6 +20,8 @@ import {
   Flame,
   Target,
   CreditCard,
+  Plus,
+  Layers,
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 
@@ -33,7 +35,14 @@ const navigation = [
   { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
   { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
   { name: 'Token Burns', href: '/admin/token-burns', icon: Flame },
-  { name: 'Recharge Records', href: '/admin/recharge-records', icon: CreditCard },
+  { name: 'Token Creations', href: '/admin/create-token', icon: Plus },
+  { name: 'Liquidity Pools', href: '/admin/liquidity-pools', icon: Layers },
+  {
+    name: 'Liquidity Recharge Records',
+    href: '/admin/liquidity-action-records',
+    icon: CreditCard,
+  },
+  { name: 'Bot Recharge Records', href: '/admin/recharge-records', icon: CreditCard },
   { name: 'Security', href: '/admin/security', icon: ShieldAlert },
   { name: 'Wallet Balances', href: '/admin/wallet-balances', icon: Wallet },
   { name: 'Emails', href: '/admin/emails', icon: Mail },
