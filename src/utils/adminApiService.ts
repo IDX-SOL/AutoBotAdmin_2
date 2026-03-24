@@ -31,6 +31,19 @@ export interface User {
   totalHoldersProcessed?: number;
   totalReactionsProcessed?: number;
   volumeBotsWithRechargeAndFund?: number;
+  // Recharge aggregates (from recharge_records)
+  totalRechargeAmount?: number;
+  totalPlatformFee?: number;
+  volumeBotRechargeAmount?: number;
+  holderBotRechargeAmount?: number;
+  totalRechargeAmountSol?: number;
+  totalRechargeAmountToken?: number;
+  totalPlatformFeeSol?: number;
+  totalPlatformFeeToken?: number;
+  volumeBotRechargeAmountSol?: number;
+  volumeBotRechargeAmountToken?: number;
+  holderBotRechargeAmountSol?: number;
+  holderBotRechargeAmountToken?: number;
 }
 
 export interface Bot {
@@ -1038,6 +1051,11 @@ const adminApiService = {
     adminAxiosInstance.get('/admin/recharge-records', { params }),
   getRechargeRecordsStats: (): Promise<AxiosResponse<{ success: boolean; data: RechargeRecordsStats }>> =>
     adminAxiosInstance.get('/admin/recharge-records/stats'),
+  getRechargeRecordsByUserId: (
+    userId: number,
+    params?: string | Record<string, string | number | boolean> | URLSearchParams
+  ): Promise<AxiosResponse<RechargeRecordsListResponse>> =>
+    adminAxiosInstance.get(`/admin/recharge-records/user/${userId}`, { params }),
 
   // Token revocation & kill switch
   getKillSwitchStatus: (): Promise<AxiosResponse<{ success: boolean; enabled: boolean }>> =>
