@@ -124,6 +124,15 @@ export interface UsersListFilterParams {
   botGreaterThan1?: boolean;
 }
 
+/** POST /admin/sendmail/aws */
+export interface SendMailAwsPayload {
+  name: string;
+  subject: string;
+  content: string;
+  type: 'series' | 'bulk';
+  recipients: string[];
+}
+
 export interface UsersResponse {
   users: User[];
   pagination: {
@@ -730,7 +739,7 @@ export interface RechargeRecordsStats {
 
 // Create admin axios instance with different configuration
 const adminAxiosInstance: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev2.idxsolana.io',
   timeout: 0, // No timeout - allow operations to complete
   headers: {
     'Content-Type': 'application/json',
@@ -740,7 +749,7 @@ const adminAxiosInstance: AxiosInstance = axios.create({
 
 // Create a separate instance for wallet operations with no timeout
 const walletAxiosInstance: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev.idxsolana.io',
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://autobot-back-dev2.idxsolana.io',
   timeout: 0, // No timeout - allow wallet operations to complete
   headers: {
     'Content-Type': 'application/json',
@@ -888,6 +897,8 @@ const adminApiService = {
   // Users management
   getUsers: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<UsersResponse>> => 
     adminAxiosInstance.get('/admin/users', { params }),
+  sendMailAws: (payload: SendMailAwsPayload): Promise<AxiosResponse<{ message?: string; emailId?: string }>> =>
+    adminAxiosInstance.post('/admin/sendmail/aws', payload),
   getUser: (userId: string): Promise<AxiosResponse<User>> => 
     adminAxiosInstance.get(`/admin/users/${userId}`),
   updateUser: (userId: string, userData: Partial<User>): Promise<AxiosResponse<User>> => 
