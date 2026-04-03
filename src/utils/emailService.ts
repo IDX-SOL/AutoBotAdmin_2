@@ -1,4 +1,11 @@
-import adminApiService, { EmailTemplate, EmailLog, EmailHistoryResponse } from './adminApiService';
+import adminApiService, {
+  EmailTemplate,
+  EmailLog,
+  EmailHistoryResponse,
+  SendMailAwsPayload,
+} from './adminApiService';
+
+export type { SendMailAwsPayload };
 
 interface ErrorResponse {
   response?: {
@@ -36,32 +43,66 @@ class EmailService {
   private baseUrl = '/admin/emails';
 
   /**
-   * Send email to users
+   * Send email to users (POST /admin/emails/send)
    */
   async sendEmail(emailData: EmailData): Promise<{ success: boolean; message: string; emailId?: string }> {
     try {
       const response = await adminApiService.getAxiosInstance().post(`${this.baseUrl}/send`, emailData);
-      
+
       if (response.status === 200) {
         return {
           success: true,
           message: 'Email sent successfully',
-          emailId: response.data.emailId
+          emailId: response.data.emailId,
         };
       }
-      
+
       return {
         success: false,
-        message: response.data.message || 'Failed to send email'
+        message: response.data.message || 'Failed to send email',
       };
     } catch (error: unknown) {
       console.error('Error sending email:', error);
-      const errorMessage = error && typeof error === 'object' && 'response' in error 
-        ? (error as ErrorResponse).response?.data?.message 
+      const errorMessage = error && typeof error === 'object' && 'response' in error
+        ? (error as ErrorResponse).response?.data?.message
         : 'Failed to send email';
       return {
         success: false,
-        message: errorMessage || 'Failed to send email'
+        message: errorMessage || 'Failed to send email',
+      };
+    }
+  }
+
+  /**
+   * Marketing page: POST /admin/sendmail/aws
+   */
+  async sendMarketingMailAws(
+    payload: SendMailAwsPayload
+  ): Promise<{ success: boolean; message: string; emailId?: string }> {
+    try {
+      const response = await adminApiService.sendMailAws(payload);
+
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          success: true,
+          message: response.data?.message || 'Email sent successfully',
+          emailId: response.data?.emailId,
+        };
+      }
+
+      return {
+        success: false,
+        message: response.data?.message || 'Failed to send email',
+      };
+    } catch (error: unknown) {
+      console.error('Error sending marketing mail (AWS):', error);
+      const errorMessage =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as ErrorResponse).response?.data?.message
+          : 'Failed to send email';
+      return {
+        success: false,
+        message: errorMessage || 'Failed to send email',
       };
     }
   }

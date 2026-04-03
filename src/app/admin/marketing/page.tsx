@@ -1,34 +1,41 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import dynamic from 'next/dynamic';
+import { UsersFilterPopup, UsersFilterValues } from '@/components/admin/UsersFilterPopup';
 
 const JoditEditor = dynamic(() => import('jodit-react'), { 
   ssr: false,
   loading: () => <div className="h-96 bg-gray-700 rounded-md flex items-center justify-center text-gray-400">Loading editor...</div>
 });
-import { Users, Send, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import adminApiService from '@/utils/adminApiService';
+import { Users, Send, Save, Eye, EyeOff, AlertCircle, CheckCircle, Search, Filter } from 'lucide-react';
+import adminApiService, { EmailTemplate, User } from '@/utils/adminApiService';
 import emailService from '@/utils/emailService';
-import { EmailTemplate } from '@/utils/adminApiService';
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  createdAt: string;
-}
-
-
+const SEARCH_DEBOUNCE_MS = 400;
+const USERS_PAGE_LIMIT = 20;
 
 export default function EmailManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedUserEmails, setSelectedUserEmails] = useState<Record<string, string>>({});
   const [emailSubject, setEmailSubject] = useState('');
   const [emailContent, setEmailContent] = useState('');
   const [emailType, setEmailType] = useState<'individual' | 'bulk' | 'all'>('individual');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: USERS_PAGE_LIMIT,
+    total: 0,
+    totalPages: 1,
+  });
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<UsersFilterValues | null>(null);
+  const [broadcastUserTotal, setBroadcastUserTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -112,75 +119,104 @@ export default function EmailManagement() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
     fetchTemplates();
   }, []);
 
-  // Debug notification state changes
   useEffect(() => {
-    if (notification) {
-      console.log('🔍 Notification state changed:', notification);
-    }
-  }, [notification]);
+    (async () => {
+      try {
+        const r = await adminApiService.getUsers({ limit: 1, page: 1 });
+        setBroadcastUserTotal(r.data?.pagination?.total ?? 0);
+      } catch {
+        setBroadcastUserTotal(0);
+      }
+    })();
+  }, []);
 
   // Sync editor content when email content changes
   useEffect(() => {
     setEditorContent(emailContent);
   }, [emailContent]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // First, get the total count of users
-      const initialResponse = await adminApiService.getUsers({ limit: 1, page: 1 });
-      if (initialResponse.status !== 200) {
-        throw new Error('Failed to get user count');
+      const params: Record<string, string | number | boolean> = {
+        page: currentPage,
+        limit: USERS_PAGE_LIMIT,
+        search: debouncedSearchTerm,
+      };
+      if (appliedFilters) {
+        if (appliedFilters.recharged) params.recharged = true;
+        if (appliedFilters.campaign) params.campaign = true;
+        if (appliedFilters.holderGreaterThan1) params.holderGreaterThan1 = true;
+        if (appliedFilters.reactionGreaterThan1) params.reactionGreaterThan1 = true;
+        if (appliedFilters.botGreaterThan1) params.botGreaterThan1 = true;
       }
-      
-      const totalUsers = initialResponse.data.pagination?.total || 0;
-      console.log(`Total users in system: ${totalUsers}`);
-      
-      if (totalUsers === 0) {
+
+      const response = await adminApiService.getUsers(params);
+
+      if (response?.data) {
+        const usersData = response.data.users || [];
+        const paginationData = response.data.pagination || {
+          page: currentPage,
+          limit: USERS_PAGE_LIMIT,
+          total: 0,
+          totalPages: 1,
+        };
+        setUsers(usersData);
+        setPagination(paginationData);
+        setTotalPages(paginationData.totalPages || 1);
+      } else {
         setUsers([]);
-        return;
-      }
-      
-      // Calculate how many pages we need to fetch all users
-      const usersPerPage = 100; // Reasonable page size
-      const totalPages = Math.ceil(totalUsers / usersPerPage);
-      
-      let allUsers: User[] = [];
-      
-      // Fetch all users in batches
-      for (let page = 1; page <= totalPages; page++) {
-        const response = await adminApiService.getUsers({ 
-          limit: usersPerPage, 
-          page: page 
+        setPagination({
+          page: currentPage,
+          limit: USERS_PAGE_LIMIT,
+          total: 0,
+          totalPages: 1,
         });
-        
-        if (response.status === 200 && response.data.users) {
-          allUsers = [...allUsers, ...response.data.users];
-        }
+        setTotalPages(1);
       }
-      
-      setUsers(allUsers);
-      console.log(`Successfully loaded ${allUsers.length} users`);
-      
     } catch (error) {
       console.error('Error fetching users:', error);
-      // Fallback: try to get at least some users with a high limit
-      try {
-        const fallbackResponse = await adminApiService.getUsers({ limit: 1000, page: 1 });
-        if (fallbackResponse.status === 200) {
-          setUsers(fallbackResponse.data.users || []);
-          console.log(`Fallback: Loaded ${fallbackResponse.data.users?.length || 0} users`);
-        }
-      } catch (fallbackError) {
-        console.error('Fallback fetch also failed:', fallbackError);
-      }
+      setUsers([]);
+      setPagination({
+        page: currentPage,
+        limit: USERS_PAGE_LIMIT,
+        total: 0,
+        totalPages: 1,
+      });
+      setTotalPages(1);
     } finally {
       setLoading(false);
+    }
+  }, [currentPage, debouncedSearchTerm, appliedFilters]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDebouncedSearchTerm(searchTerm);
+    setCurrentPage(1);
+  };
+
+  const refreshUsersAndBroadcastTotal = async () => {
+    await fetchUsers();
+    try {
+      const r = await adminApiService.getUsers({ limit: 1, page: 1 });
+      setBroadcastUserTotal(r.data?.pagination?.total ?? 0);
+    } catch {
+      /* ignore */
     }
   };
 
@@ -252,20 +288,62 @@ export default function EmailManagement() {
     }
   };
 
-  const handleUserSelection = (userId: string) => {
+  const handleUserSelection = (user: User) => {
+    const userId = user.id;
     if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
+      setSelectedUserEmails((prev) => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
     } else {
       setSelectedUsers([...selectedUsers, userId]);
+      setSelectedUserEmails((prev) => ({ ...prev, [userId]: user.email }));
     }
   };
 
-  const handleSelectAll = () => {
-    if (selectedUsers.length === users.length) {
-      setSelectedUsers([]);
+  const handleSelectAllOnPage = () => {
+    const pageIds = users.map((u) => u.id);
+    const allPageSelected =
+      pageIds.length > 0 && pageIds.every((id) => selectedUsers.includes(id));
+    if (allPageSelected) {
+      setSelectedUsers(selectedUsers.filter((id) => !pageIds.includes(id)));
+      setSelectedUserEmails((prev) => {
+        const next = { ...prev };
+        pageIds.forEach((id) => {
+          delete next[id];
+        });
+        return next;
+      });
     } else {
-      setSelectedUsers(users.map(user => user.id));
+      const idSet = new Set([...selectedUsers, ...pageIds]);
+      setSelectedUsers([...idSet]);
+      setSelectedUserEmails((prev) => {
+        const next = { ...prev };
+        users.forEach((u) => {
+          next[u.id] = u.email;
+        });
+        return next;
+      });
     }
+  };
+
+  const collectAllUserEmails = async (): Promise<string[]> => {
+    const limit = 100;
+    const first = await adminApiService.getUsers({ limit, page: 1 });
+    const total = first.data?.pagination?.total ?? 0;
+    const pages = Math.max(1, Math.ceil(total / limit));
+    const emails: string[] = [];
+    for (let page = 1; page <= pages; page++) {
+      const res = await adminApiService.getUsers({ limit, page });
+      if (res.status === 200 && res.data?.users) {
+        for (const u of res.data.users) {
+          if (u.email) emails.push(u.email);
+        }
+      }
+    }
+    return emails;
   };
 
   const handleTemplateSelect = (template: EmailTemplate) => {
@@ -289,53 +367,69 @@ export default function EmailManagement() {
       return;
     }
 
-    let targetUsers: string[] = [];
-
     switch (emailType) {
       case 'individual':
         if (selectedUsers.length === 0) {
           showNotification('error', 'Please select at least one user');
           return;
         }
-        targetUsers = selectedUsers;
         break;
       case 'bulk':
         if (selectedUsers.length === 0) {
           showNotification('error', 'Please select users for bulk email');
           return;
         }
-        targetUsers = selectedUsers;
         break;
       case 'all':
-        targetUsers = users.map((user) => user.id);
         break;
     }
 
     try {
       setSending(true);
 
-      const emailData = {
+      let recipients: string[];
+      if (emailType === 'individual' || emailType === 'bulk') {
+        recipients = selectedUsers.map((id) => selectedUserEmails[id]).filter(Boolean);
+        if (recipients.length !== selectedUsers.length) {
+          showNotification(
+            'error',
+            'Some selected users are missing an email address. Refresh the list and select again.'
+          );
+          return;
+        }
+      } else {
+        recipients = await collectAllUserEmails();
+      }
+
+      if (recipients.length === 0) {
+        showNotification('error', 'No recipient email addresses to send to.');
+        return;
+      }
+
+      const template =
+        selectedTemplate != null ? templates.find((t) => t.id === selectedTemplate) : undefined;
+      const name = template?.name?.trim() || emailSubject.trim() || 'Email';
+      const mailType = emailType === 'individual' ? 'series' : 'bulk';
+
+      const result = await emailService.sendMarketingMailAws({
+        name,
         subject: emailSubject,
         content: emailContent,
-        userIds: targetUsers,
-        type: emailType,
-        templateId: selectedTemplate || undefined,
-      };
-
-      const result = await emailService.sendEmail(emailData);
+        type: mailType,
+        recipients,
+      });
 
       if (result.success) {
-        const successMessage = `Email sent successfully to ${targetUsers.length} user(s)!`;
+        const successMessage = `Email sent successfully to ${recipients.length} recipient(s)!`;
         showNotification('success', successMessage);
-        
-        // Reset form
+
         setEmailSubject('');
         setEmailContent('');
         setEditorContent('');
         setSelectedUsers([]);
+        setSelectedUserEmails({});
         setSelectedTemplate(null);
       } else {
-        console.log('❌ Email failed:', result.message);
         showNotification('error', result.message);
       }
       
@@ -358,22 +452,21 @@ export default function EmailManagement() {
     }, duration);
   };
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const getSelectedUsersCount = () => {
     switch (emailType) {
       case 'individual':
       case 'bulk':
         return selectedUsers.length;
       case 'all':
-        return users.length;
+        return broadcastUserTotal;
       default:
         return 0;
     }
   };
+
+  const pageUserIds = users.map((u) => u.id);
+  const allPageSelected =
+    pageUserIds.length > 0 && pageUserIds.every((id) => selectedUsers.includes(id));
 
   return (
     <AdminLayout>
@@ -566,27 +659,66 @@ export default function EmailManagement() {
         {/* User Selection (for individual and bulk emails) */}
         {(emailType === 'individual' || emailType === 'bulk') && (
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-white">Select Users</h3>
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col gap-4 mb-4">
+              <div className="flex justify-between items-center flex-wrap gap-3">
+                <h3 className="text-lg font-semibold text-white">Select Users</h3>
                 <div className="text-sm text-gray-400">
-                  {loading ? 'Loading users...' : `${users.length} total users available`}
+                  {loading
+                    ? 'Loading users...'
+                    : `${pagination.total} user(s) match filters · ${selectedUsers.length} selected`}
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                />
+              </div>
+
+              <form
+                onSubmit={handleSearch}
+                className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4"
+              >
+                <div className="flex-1 relative min-w-0">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search users by username or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
                 <button
-                  onClick={handleSelectAll}
-                  className="text-sm text-blue-400 hover:text-blue-300"
+                  type="submit"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shrink-0"
                 >
-                  {selectedUsers.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
+                  Search
                 </button>
                 <button
-                  onClick={fetchUsers}
+                  type="button"
+                  onClick={() => setFilterOpen(true)}
+                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Filter</span>
+                </button>
+                <UsersFilterPopup
+                  open={filterOpen}
+                  onOpenChange={setFilterOpen}
+                  onApply={(filters) => {
+                    setAppliedFilters(filters);
+                    setCurrentPage(1);
+                  }}
+                  initialFilters={appliedFilters ?? undefined}
+                />
+              </form>
+
+              <div className="flex flex-wrap items-center gap-4 justify-end">
+                <button
+                  type="button"
+                  onClick={handleSelectAllOnPage}
+                  className="text-sm text-blue-400 hover:text-blue-300"
+                >
+                  {allPageSelected ? 'Deselect page' : 'Select page'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void refreshUsersAndBroadcastTotal()}
                   disabled={loading}
                   className="text-sm text-green-400 hover:text-green-300 disabled:text-gray-500"
                   title="Refresh user list"
@@ -600,52 +732,80 @@ export default function EmailManagement() {
               <div className="flex flex-col items-center justify-center h-32 space-y-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 <p className="text-sm text-gray-400">Loading users...</p>
-                <p className="text-xs text-gray-500">This may take a moment for large user databases</p>
+                <p className="text-xs text-gray-500">Use search and filters to narrow the list</p>
               </div>
             ) : (
-              <div className="max-h-96 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedUsers.includes(user.id)
-                          ? 'border-blue-500 bg-blue-600/20'
-                          : 'border-gray-600 hover:border-gray-500'
-                      }`}
-                      onClick={() => handleUserSelection(user.id)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.includes(user.id)}
-                          onChange={() => {}}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-white">{user.username}</p>
-                          <p className="text-xs text-gray-400">{user.email}</p>
+              <>
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedUsers.includes(user.id)
+                            ? 'border-blue-500 bg-blue-600/20'
+                            : 'border-gray-600 hover:border-gray-500'
+                        }`}
+                        onClick={() => handleUserSelection(user)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.includes(user.id)}
+                            onChange={() => {}}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <p className="text-sm font-medium text-white">{user.username}</p>
+                            <p className="text-xs text-gray-400">{user.email}</p>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                  {users.length === 0 && (
+                    <div className="text-center text-gray-400 py-8">
+                      {debouncedSearchTerm ? (
+                        <div>
+                          <p>No users found matching &quot;{debouncedSearchTerm}&quot;</p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Try a different search term or adjust filters
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p>No users available</p>
+                          <p className="text-sm text-gray-500 mt-2">Check if users exist in the system</p>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )}
                 </div>
-                {filteredUsers.length === 0 && (
-                  <div className="text-center text-gray-400 py-8">
-                    {searchTerm ? (
-                      <div>
-                        <p>No users found matching &quot;{searchTerm}&quot;</p>
-                        <p className="text-sm text-gray-500 mt-2">Try a different search term or clear the search</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p>No users available</p>
-                        <p className="text-sm text-gray-500 mt-2">Check if users exist in the system</p>
-                      </div>
-                    )}
+
+                {users.length > 0 && totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-400">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         )}

@@ -46,8 +46,9 @@ const navigation = [
   { name: 'Security', href: '/admin/security', icon: ShieldAlert },
   { name: 'Wallet Balances', href: '/admin/wallet-balances', icon: Wallet },
   { name: 'Emails', href: '/admin/emails', icon: Mail },
-  { name: 'Email Monitoring', href: '/admin/email-monitoring', icon: Mail },
-  { name: 'Email Automation', href: '/admin/email-automation', icon: Mail },
+  // { name: 'Email Monitoring', href: '/admin/email-monitoring', icon: Mail },
+  // { name: 'Email Automation', href: '/admin/email-automation', icon: Mail },
+  { name: 'Email Marketing', href: '/admin/marketing', icon: Mail },
   // { name: 'Analytics', href: '#', icon: TrendingUpDownIcon },
   // { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
