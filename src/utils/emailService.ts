@@ -489,12 +489,7 @@ class EmailService {
     if (content.includes('onclick=') || content.includes('onload=')) {
       errors.push('Event handlers are not allowed');
     }
-    
-    // Check content length
-    if (content.length > 50000) {
-      errors.push('Email content is too long (max 50,000 characters)');
-    }
-    
+
     return {
       isValid: errors.length === 0,
       errors
