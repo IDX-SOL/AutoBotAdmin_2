@@ -40,7 +40,8 @@ const rechargedAndFundedSum = (user: User) => {
   const reactions = Number(user.totalReactionsProcessed) || 0;
   const holders = Number(user.totalHoldersProcessed) || 0;
   const holderCredit = holders > 0 ? 1 : 0;
-  return volume + reactions + holderCredit;
+  const reactionCredit = reactions > 0 ? 1 : 0;
+  return volume + reactionCredit + holderCredit;
 };
 
 export default function AdminUsers() {
