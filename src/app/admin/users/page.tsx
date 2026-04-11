@@ -35,10 +35,13 @@ const formatRechargeAmount = (value?: number | null) => {
   return n.toLocaleString("en-IN", { maximumFractionDigits: 6 });
 };
 
-const rechargedAndFundedSum = (user: User) =>
-  (user.volumeBotsWithRechargeAndFund || 0) +
-  (user.totalHoldersProcessed || 0) +
-  (user.totalReactionsProcessed || 0);
+const rechargedAndFundedSum = (user: User) => {
+  const volume = Number(user.volumeBotsWithRechargeAndFund) || 0;
+  const reactions = Number(user.totalReactionsProcessed) || 0;
+  const holders = Number(user.totalHoldersProcessed) || 0;
+  const holderCredit = holders > 0 ? 1 : 0;
+  return volume + reactions + holderCredit;
+};
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -374,7 +377,7 @@ export default function AdminUsers() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
                     <Battery className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm text-white">{user.volumeBotsWithRechargeAndFund || 0}</span>
+                    <span className="text-sm text-white">{rechargedAndFundedSum(user)}</span>
                   </div>
                 </td>
 
