@@ -35,6 +35,11 @@ const formatRechargeAmount = (value?: number | null) => {
   return n.toLocaleString("en-IN", { maximumFractionDigits: 6 });
 };
 
+const rechargedAndFundedSum = (user: User) =>
+  (user.volumeBotsWithRechargeAndFund || 0) +
+  (user.totalHoldersProcessed || 0) +
+  (user.totalReactionsProcessed || 0);
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,7 +248,7 @@ export default function AdminUsers() {
           <Battery className="h-4 w-4 text-yellow-500" />
           <div>
             <p className="text-xs text-gray-400">Recharged & Funded</p>
-            <p className="text-sm font-semibold text-white">{user.volumeBotsWithRechargeAndFund || 0}</p>
+            <p className="text-sm font-semibold text-white">{rechargedAndFundedSum(user)}</p>
           </div>
         </div>
       </div>

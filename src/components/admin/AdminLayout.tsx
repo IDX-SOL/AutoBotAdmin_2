@@ -22,6 +22,8 @@ import {
   CreditCard,
   Plus,
   Layers,
+  PanelLeftClose,
+  PanelLeft,
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 
@@ -59,6 +61,7 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [adminData, setAdminData] = useState<AdminUser | null>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -129,7 +132,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Desktop sidebar */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+        <div
+          className={`hidden lg:fixed lg:inset-y-0 lg:z-30 lg:flex lg:w-64 lg:flex-col transition-transform duration-200 ease-out ${
+            desktopSidebarOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
+          }`}
+        >
           <div className="flex flex-col flex-grow bg-gray-800 border-r border-gray-700">
             <div className="flex items-center h-16 px-4 border-b border-gray-700">
               <h1 className="text-xl font-bold text-white">AutoBot Admin</h1>
@@ -157,17 +164,37 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Main content */}
-        <div className="lg:pl-64">
+        <div
+          className={`transition-[padding] duration-200 ease-out ${
+            desktopSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'
+          }`}
+        >
           {/* Top header */}
           <div className="sticky top-0 z-40 bg-gray-800 border-b border-gray-700">
             <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-              <button
-                type="button"
-                className="lg:hidden text-gray-400 hover:text-white"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-6 w-6" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="lg:hidden text-gray-400 hover:text-white p-1 rounded-md hover:bg-gray-700/80"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+                <button
+                  type="button"
+                  className="hidden lg:inline-flex items-center justify-center text-gray-400 hover:text-white p-1 rounded-md hover:bg-gray-700/80"
+                  onClick={() => setDesktopSidebarOpen((open) => !open)}
+                  aria-label={desktopSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+                  aria-expanded={desktopSidebarOpen}
+                >
+                  {desktopSidebarOpen ? (
+                    <PanelLeftClose className="h-6 w-6" />
+                  ) : (
+                    <PanelLeft className="h-6 w-6" />
+                  )}
+                </button>
+              </div>
 
               <div className="flex items-center space-x-4">
                 {/* Admin info */}
