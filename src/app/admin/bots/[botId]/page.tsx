@@ -109,6 +109,7 @@ export default function BotDetailPage() {
   const [logSearch, setLogSearch] = useState('');
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
+  const [backfillingWallet, setBackfillingWallet] = useState(false);
 
   const fetchBotDetails = useCallback(async () => {
     try {
@@ -140,6 +141,38 @@ export default function BotDetailPage() {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const canBackfillUserWallet =
+    !!bot &&
+    !bot.userWallet &&
+    !!bot.middleWalletAddress &&
+    bot.firstFundAdd === true;
+
+  const handleBackfillUserWallet = async () => {
+    if (!bot || !canBackfillUserWallet || backfillingWallet) return;
+
+    try {
+      setBackfillingWallet(true);
+      const response = await adminApiService.backfillBotUserWallet(bot.id);
+      const derivedWallet = response.data?.derivedUserWallet;
+
+      showSuccess(
+        derivedWallet
+          ? `User wallet updated: ${derivedWallet}`
+          : 'User wallet backfill completed successfully'
+      );
+      await fetchBotDetails();
+    } catch (error: unknown) {
+      const maybeError = error as {
+        response?: { data?: { error?: string; message?: string } };
+      };
+      const apiMessage =
+        maybeError?.response?.data?.error || maybeError?.response?.data?.message;
+      showError(apiMessage || 'Failed to backfill user wallet');
+    } finally {
+      setBackfillingWallet(false);
+    }
   };
 
   const getStatusBadge = (status: string | undefined) => {
@@ -279,6 +312,19 @@ export default function BotDetailPage() {
             {getStatusBadge(bot.status)}
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleBackfillUserWallet}
+              disabled={!canBackfillUserWallet || backfillingWallet}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                canBackfillUserWallet
+                  ? 'Derive user wallet from first middle-wallet funding transaction'
+                  : 'Available only when user wallet is empty, middle wallet exists, and first fund is added'
+              }
+            >
+              <Wallet className={`h-4 w-4 ${backfillingWallet ? 'animate-pulse' : ''}`} />
+              {backfillingWallet ? 'Backfilling...' : 'Backfill User Wallet'}
+            </button>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
