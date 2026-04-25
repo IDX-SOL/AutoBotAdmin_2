@@ -42,6 +42,7 @@ export default function AdminBots() {
     totalPages: 1
   });
   const [isBulkOperating, setIsBulkOperating] = useState(false);
+  const [isBulkBackfillingWallets, setIsBulkBackfillingWallets] = useState(false);
   const [responseDetails, setResponseDetails] = useState<Array<{
     message: string;
     botId: string;
@@ -72,6 +73,14 @@ export default function AdminBots() {
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [responseTitle, setResponseTitle] = useState('');
   const { showSuccess, showError } = useToast();
+
+  const updateBotUserWalletInState = useCallback((botId: string, userWallet: string) => {
+    setBots((prevBots) =>
+      prevBots.map((existingBot) =>
+        existingBot.id === botId ? { ...existingBot, userWallet } : existingBot
+      )
+    );
+  }, []);
 
   const fetchBots = useCallback(async () => {
     try {
@@ -223,6 +232,54 @@ export default function AdminBots() {
     }
   };
 
+  const handleBackfillAllEligibleBots = async () => {
+    const confirmed = window.confirm(
+      'Run global wallet backfill for all bots where userWallet is empty and firstFundAdd=true?'
+    );
+    if (!confirmed) return;
+
+    setIsBulkBackfillingWallets(true);
+    try {
+      const response = await adminApiService.backfillAllBotUserWallets(false, true);
+      const totals = response.data?.totals;
+      const results = response.data?.results || [];
+
+      results.forEach((result) => {
+        if (result?.derivedUserWallet && result?.botId) {
+          updateBotUserWalletInState(String(result.botId), result.derivedUserWallet);
+        }
+      });
+
+      if (totals) {
+        const { success, failed, skipped, candidates } = totals;
+        if (failed === 0) {
+          showSuccess(
+            `Global backfill done: ${success}/${candidates} success` +
+              (skipped > 0 ? `, ${skipped} skipped` : '')
+          );
+        } else {
+          showError(
+            `Global backfill done: ${success} success, ${failed} failed` +
+              (skipped > 0 ? `, ${skipped} skipped` : '')
+          );
+        }
+      } else {
+        showSuccess('Global wallet backfill completed');
+      }
+
+      await fetchBots();
+    } catch (error: unknown) {
+      const maybeError = error as {
+        response?: { data?: { error?: string; message?: string } };
+      };
+      const apiMessage =
+        maybeError?.response?.data?.error || maybeError?.response?.data?.message;
+      showError(apiMessage || 'Global wallet backfill failed');
+    } finally {
+      setIsBulkBackfillingWallets(false);
+    }
+  };
+
 
   // const getStatusColor = (status: string | undefined) => {
   //   if (!status) return "bg-gray-500/20 text-gray-400";
@@ -311,12 +368,14 @@ export default function AdminBots() {
         setIsBackfillingWallet(true);
         const response = await adminApiService.backfillBotUserWallet(bot.id);
         const derivedWallet = response.data?.derivedUserWallet;
+        if (derivedWallet) {
+          updateBotUserWalletInState(bot.id, derivedWallet);
+        }
         showSuccess(
           derivedWallet
             ? `Bot ${bot.id}: user wallet updated (${derivedWallet})`
             : `Bot ${bot.id}: user wallet updated`
         );
-        await fetchBots();
       } catch (error: unknown) {
         const maybeError = error as {
           response?: { data?: { error?: string; message?: string } };
@@ -687,6 +746,13 @@ export default function AdminBots() {
               </span>
             )}
 
+            {bot.userWallet && (
+              <span className="flex items-center gap-1 text-green-400">
+                <CheckCircle2 className="h-3 w-3" />
+                Wallet Found
+              </span>
+            )}
+
             {bot.deletedAt && (
               <span className="flex items-center gap-1 text-red-400">
                 <Trash2 className="h-3 w-3 cursor-pointer" onClick={() => handleDelete(bot.id, bot.botName)} />
@@ -795,6 +861,19 @@ export default function AdminBots() {
                 <Play className="h-4 w-4" />
               )}
               <span>Start All Stopped</span>
+            </button>
+
+            <button
+              onClick={handleBackfillAllEligibleBots}
+              disabled={isBulkBackfillingWallets}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+            >
+              {isBulkBackfillingWallets ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wallet className="h-4 w-4" />
+              )}
+              <span>Fetch User Wallet (Global)</span>
             </button>
 
             <Link

@@ -146,6 +146,25 @@ export interface BackfillUserWalletResponse {
   };
 }
 
+export interface BackfillAllUserWalletsResponse {
+  success: boolean;
+  message: string;
+  dryRun: boolean;
+  totals: {
+    candidates: number;
+    success: number;
+    failed: number;
+    skipped: number;
+  };
+  results?: Array<{
+    botId: string | number;
+    middleWalletAddress: string | null;
+    derivedUserWallet: string | null;
+    updated: boolean;
+    error: string | null;
+  }>;
+}
+
 export interface HolderBot {
   id: number;
   userId?: number;
@@ -798,6 +817,11 @@ const adminApiService = {
     dryRun: boolean = false
   ): Promise<AxiosResponse<BackfillUserWalletResponse>> =>
     adminAxiosInstance.post(`/admin/bots/${botId}/backfill-user-wallet`, { dryRun }),
+  backfillAllBotUserWallets: (
+    dryRun: boolean = false,
+    includeResults: boolean = true
+  ): Promise<AxiosResponse<BackfillAllUserWalletsResponse>> =>
+    adminAxiosInstance.post('/admin/bots/backfill-user-wallets', { dryRun, includeResults }),
   restoreBot: (botId: string): Promise<AxiosResponse<Bot>> => 
     adminAxiosInstance.post(`/admin/bots/${botId}/restore`),
   stopRunningBot: (): Promise<AxiosResponse<{ message: string; botstoppedData: Array<{
