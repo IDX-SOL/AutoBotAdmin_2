@@ -767,6 +767,8 @@ export interface RechargeRecordsStats {
   totalRecords: number;
   totalAmount: number;
   totalPlatformFee: number;
+  totalPlatformFeeSolRechargeInSol: number;
+  totalPlatformFeeTokenRechargeInSol: number;
   totalSolAmount: number;
   totalTokenAmount: number;
   totalTokenAmountInSol: number;
@@ -779,6 +781,8 @@ export interface RechargeRecordsStats {
       count: number;
       totalAmount: number;
       totalPlatformFee: number;
+      solRechargePlatformFeeInSol: number;
+      tokenRechargePlatformFeeInSol: number;
       solAmount: number;
       tokenAmount: number;
       tokenAmountInSol: number;

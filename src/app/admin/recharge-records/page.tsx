@@ -280,6 +280,21 @@ export default function RechargeRecordsPage() {
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-gray-700 bg-gray-800/70 p-4">
+            <p className="text-sm text-gray-400">Platform Fee (SOL Recharge)</p>
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {formatNumber(stats?.totalPlatformFeeSolRechargeInSol ?? 0, 6)} SOL
+            </p>
+          </div>
+          <div className="rounded-2xl border border-gray-700 bg-gray-800/70 p-4">
+            <p className="text-sm text-gray-400">Platform Fee (TOKEN Recharge)</p>
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {formatNumber(stats?.totalPlatformFeeTokenRechargeInSol ?? 0, 6)} SOL eq.
+            </p>
+          </div>
+        </div>
+
         <form
           onSubmit={handleSubmitFilters}
           className="rounded-2xl border border-gray-700 bg-gray-800/70 p-4 space-y-4"
@@ -504,12 +519,14 @@ export default function RechargeRecordsPage() {
                   <th className="px-4 py-3 text-left font-semibold">TOKEN (SOL Eq.)</th>
                   <th className="px-4 py-3 text-left font-semibold">Total SOL Eq.</th>
                   <th className="px-4 py-3 text-left font-semibold">Platform Fee</th>
+                  <th className="px-4 py-3 text-left font-semibold">Fee SOL Recharge</th>
+                  <th className="px-4 py-3 text-left font-semibold">Fee TOKEN Recharge</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800 text-gray-200">
                 {rechargeTypeRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                       No recharge type summary available.
                     </td>
                   </tr>
@@ -525,6 +542,8 @@ export default function RechargeRecordsPage() {
                         {formatNumber(data?.totalSolEquivalent ?? 0, 6)}
                       </td>
                       <td className="px-4 py-3">{formatNumber(data?.totalPlatformFee ?? 0, 6)}</td>
+                      <td className="px-4 py-3">{formatNumber(data?.solRechargePlatformFeeInSol ?? 0, 6)}</td>
+                      <td className="px-4 py-3">{formatNumber(data?.tokenRechargePlatformFeeInSol ?? 0, 6)}</td>
                     </tr>
                   ))
                 )}
