@@ -618,8 +618,24 @@ export interface RechargeRecordsStats {
   totalRecords: number;
   totalAmount: number;
   totalPlatformFee: number;
+  totalSolAmount: number;
+  totalTokenAmount: number;
+  totalTokenAmountInSol: number;
+  totalSolEquivalent: number;
   lastRecordAt: string | null;
   byBotType: Record<string, { count: number; totalAmount: number; totalFee: number }>;
+  byRechargeType: Record<
+    string,
+    {
+      count: number;
+      totalAmount: number;
+      totalPlatformFee: number;
+      solAmount: number;
+      tokenAmount: number;
+      tokenAmountInSol: number;
+      totalSolEquivalent: number;
+    }
+  >;
 }
 
 // Create admin axios instance with different configuration

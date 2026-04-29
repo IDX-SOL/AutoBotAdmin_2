@@ -36,6 +36,62 @@ const BOT_TYPE_LABELS: Record<string, string> = {
   reaction: 'Reaction Bot',
 };
 
+const parseMetadataNumber = (metadata: unknown, key: string) => {
+  if (!metadata || typeof metadata !== 'object') return 0;
+  const raw = (metadata as Record<string, unknown>)[key];
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : 0;
+};
+
+const getRechargeAmounts = (rec: RechargeRecordItem) => {
+  const amount = Number(rec.amount || 0);
+  const currency = (rec.currency || '').toUpperCase();
+  const metadataTokenAmount = parseMetadataNumber(rec.metadata, 'tokenAmount');
+  const metadataTokenToSolRate = parseMetadataNumber(rec.metadata, 'tokenToSolRate');
+  const metadataTokenAmountInSol = parseMetadataNumber(rec.metadata, 'tokenAmountInSol');
+
+  const calculateTokenAmountInSol = (tokenAmountValue: number) => {
+    if (metadataTokenAmountInSol > 0) return metadataTokenAmountInSol;
+    if (tokenAmountValue > 0 && metadataTokenToSolRate > 0) {
+      return tokenAmountValue * metadataTokenToSolRate;
+    }
+    return 0;
+  };
+
+  if (currency === 'SOL') {
+    return {
+      solAmount: amount,
+      tokenAmount: 0,
+      tokenAmountInSol: 0,
+      totalSolEquivalent: amount,
+    };
+  }
+
+  if (currency === 'TOKEN') {
+    const tokenAmount = metadataTokenAmount > 0 ? metadataTokenAmount : amount;
+    const tokenAmountInSol = calculateTokenAmountInSol(tokenAmount);
+    return {
+      solAmount: 0,
+      tokenAmount,
+      tokenAmountInSol,
+      totalSolEquivalent: tokenAmountInSol,
+    };
+  }
+
+  const solAmount = parseMetadataNumber(rec.metadata, 'solAmount');
+  const tokenAmount = metadataTokenAmount;
+  const tokenAmountInSol =
+    calculateTokenAmountInSol(tokenAmount) ||
+    Math.max(0, amount - solAmount);
+
+  return {
+    solAmount,
+    tokenAmount,
+    tokenAmountInSol,
+    totalSolEquivalent: solAmount + tokenAmountInSol,
+  };
+};
+
 export default function RechargeRecordsPage() {
   const [records, setRecords] = useState<RechargeRecordItem[]>([]);
   const [stats, setStats] = useState<RechargeRecordsStats | null>(null);
@@ -139,8 +195,8 @@ export default function RechargeRecordsPage() {
     },
     {
       label: 'Total Amount',
-      value: `${formatNumber(stats?.totalAmount ?? 0, 4)} SOL eq.`,
-      subtext: 'Recharge amounts recorded',
+      value: `${formatNumber(stats?.totalSolEquivalent ?? stats?.totalAmount ?? 0, 4)} SOL eq.`,
+      subtext: 'SOL + token SOL equivalent',
     },
     {
       label: 'Total Platform Fee',
@@ -153,6 +209,14 @@ export default function RechargeRecordsPage() {
       subtext: 'Times in IST',
     },
   ];
+
+  const rechargeTypeRows = useMemo(
+    () =>
+      Object.entries(stats?.byRechargeType ?? {}).sort(
+        (a, b) => (b[1]?.count ?? 0) - (a[1]?.count ?? 0)
+      ),
+    [stats]
+  );
 
   return (
     <AdminLayout>
@@ -193,6 +257,27 @@ export default function RechargeRecordsPage() {
               <p className="mt-1 text-xs text-gray-500">{card.subtext}</p>
             </div>
           ))}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-gray-700 bg-gray-800/70 p-4">
+            <p className="text-sm text-gray-400">Total SOL Recharge</p>
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {formatNumber(stats?.totalSolAmount ?? 0, 6)} SOL
+            </p>
+          </div>
+          <div className="rounded-2xl border border-gray-700 bg-gray-800/70 p-4">
+            <p className="text-sm text-gray-400">Total TOKEN Recharge</p>
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {formatNumber(stats?.totalTokenAmount ?? 0, 6)} TOKEN
+            </p>
+          </div>
+          <div className="rounded-2xl border border-gray-700 bg-gray-800/70 p-4">
+            <p className="text-sm text-gray-400">TOKEN in SOL Equivalent</p>
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {formatNumber(stats?.totalTokenAmountInSol ?? 0, 6)} SOL
+            </p>
+          </div>
         </div>
 
         <form
@@ -308,8 +393,9 @@ export default function RechargeRecordsPage() {
                   <th className="px-4 py-3 text-left font-semibold">User</th>
                   <th className="px-4 py-3 text-left font-semibold">Bot Type</th>
                   <th className="px-4 py-3 text-left font-semibold">Bot ID</th>
-                  <th className="px-4 py-3 text-left font-semibold">Amount</th>
-                  <th className="px-4 py-3 text-left font-semibold">Currency</th>
+                  <th className="px-4 py-3 text-left font-semibold">SOL Amount</th>
+                  <th className="px-4 py-3 text-left font-semibold">TOKEN Amount</th>
+                  <th className="px-4 py-3 text-left font-semibold">SOL Eq.</th>
                   <th className="px-4 py-3 text-left font-semibold">Recharge Type</th>
                   <th className="px-4 py-3 text-left font-semibold">Platform Fee</th>
                   <th className="px-4 py-3 text-left font-semibold">Device</th>
@@ -319,7 +405,7 @@ export default function RechargeRecordsPage() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={11}
                       className="px-4 py-12 text-center text-gray-400"
                     >
                       <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-b-2 border-cyan-400" />
@@ -329,14 +415,16 @@ export default function RechargeRecordsPage() {
                 ) : records.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={11}
                       className="px-4 py-10 text-center text-gray-500"
                     >
                       No recharge records found for the selected filters.
                     </td>
                   </tr>
                 ) : (
-                  records.map((rec) => (
+                  records.map((rec) => {
+                    const amounts = getRechargeAmounts(rec);
+                    return (
                     <tr key={rec.id} className="hover:bg-gray-800/40">
                       <td className="px-4 py-4 text-gray-300">
                         {formatDate(rec.createdAt)}
@@ -368,10 +456,13 @@ export default function RechargeRecordsPage() {
                         {rec.botId}
                       </td>
                       <td className="px-4 py-4 font-semibold text-white">
-                        {formatNumber(rec.amount, 6)}
+                        {formatNumber(amounts.solAmount, 6)}
                       </td>
                       <td className="px-4 py-4 text-gray-300">
-                        {rec.currency}
+                        {formatNumber(amounts.tokenAmount, 6)}
+                      </td>
+                      <td className="px-4 py-4 text-gray-300">
+                        {formatNumber(amounts.totalSolEquivalent, 6)}
                       </td>
                       <td className="px-4 py-4 text-gray-300">
                         {rec.rechargeType ?? '—'}
@@ -384,6 +475,56 @@ export default function RechargeRecordsPage() {
                       <td className="px-4 py-4 text-gray-400 text-xs">
                         {rec.deviceType ?? '—'}
                       </td>
+                    </tr>
+                  );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-gray-700 bg-gray-900/60">
+          <div className="border-b border-gray-800 px-4 py-3">
+            <h2 className="text-sm font-semibold text-gray-200">
+              Recharge Type Summary
+            </h2>
+            <p className="text-xs text-gray-500">
+              Separate totals by recharge type (SOL/TOKEN/BOTH/FIRST, etc.)
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-800 text-sm">
+              <thead className="bg-gray-800/60 text-gray-400">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Recharge Type</th>
+                  <th className="px-4 py-3 text-left font-semibold">Count</th>
+                  <th className="px-4 py-3 text-left font-semibold">SOL Amount</th>
+                  <th className="px-4 py-3 text-left font-semibold">TOKEN Amount</th>
+                  <th className="px-4 py-3 text-left font-semibold">TOKEN (SOL Eq.)</th>
+                  <th className="px-4 py-3 text-left font-semibold">Total SOL Eq.</th>
+                  <th className="px-4 py-3 text-left font-semibold">Platform Fee</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800 text-gray-200">
+                {rechargeTypeRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                      No recharge type summary available.
+                    </td>
+                  </tr>
+                ) : (
+                  rechargeTypeRows.map(([type, data]) => (
+                    <tr key={type} className="hover:bg-gray-800/40">
+                      <td className="px-4 py-3 font-medium text-white">{type}</td>
+                      <td className="px-4 py-3">{(data?.count ?? 0).toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-3">{formatNumber(data?.solAmount ?? 0, 6)}</td>
+                      <td className="px-4 py-3">{formatNumber(data?.tokenAmount ?? 0, 6)}</td>
+                      <td className="px-4 py-3">{formatNumber(data?.tokenAmountInSol ?? 0, 6)}</td>
+                      <td className="px-4 py-3 font-semibold text-white">
+                        {formatNumber(data?.totalSolEquivalent ?? 0, 6)}
+                      </td>
+                      <td className="px-4 py-3">{formatNumber(data?.totalPlatformFee ?? 0, 6)}</td>
                     </tr>
                   ))
                 )}
