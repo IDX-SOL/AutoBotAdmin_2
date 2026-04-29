@@ -153,6 +153,40 @@ export interface BotsResponse {
   };
 }
 
+export interface BackfillUserWalletResponse {
+  success: boolean;
+  message: string;
+  dryRun: boolean;
+  botId: string | number;
+  middleWalletAddress: string;
+  derivedUserWallet: string;
+  funding: {
+    signature: string;
+    lamports: number;
+    blockTime: number | null;
+    feePayer: string | null;
+  };
+}
+
+export interface BackfillAllUserWalletsResponse {
+  success: boolean;
+  message: string;
+  dryRun: boolean;
+  totals: {
+    candidates: number;
+    success: number;
+    failed: number;
+    skipped: number;
+  };
+  results?: Array<{
+    botId: string | number;
+    middleWalletAddress: string | null;
+    derivedUserWallet: string | null;
+    updated: boolean;
+    error: string | null;
+  }>;
+}
+
 export interface HolderBot {
   id: number;
   userId?: number;
@@ -733,8 +767,24 @@ export interface RechargeRecordsStats {
   totalRecords: number;
   totalAmount: number;
   totalPlatformFee: number;
+  totalSolAmount: number;
+  totalTokenAmount: number;
+  totalTokenAmountInSol: number;
+  totalSolEquivalent: number;
   lastRecordAt: string | null;
   byBotType: Record<string, { count: number; totalAmount: number; totalFee: number }>;
+  byRechargeType: Record<
+    string,
+    {
+      count: number;
+      totalAmount: number;
+      totalPlatformFee: number;
+      solAmount: number;
+      tokenAmount: number;
+      tokenAmountInSol: number;
+      totalSolEquivalent: number;
+    }
+  >;
 }
 
 // Create admin axios instance with different configuration
@@ -929,6 +979,16 @@ const adminApiService = {
     adminAxiosInstance.delete(`/admin/bots/${botId}`),
   getBotTradeWallets: (botId: string): Promise<AxiosResponse<string>> => 
     adminAxiosInstance.get(`/admin/bots/${botId}/trade-wallets`),
+  backfillBotUserWallet: (
+    botId: string,
+    dryRun: boolean = false
+  ): Promise<AxiosResponse<BackfillUserWalletResponse>> =>
+    adminAxiosInstance.post(`/admin/bots/${botId}/backfill-user-wallet`, { dryRun }),
+  backfillAllBotUserWallets: (
+    dryRun: boolean = false,
+    includeResults: boolean = true
+  ): Promise<AxiosResponse<BackfillAllUserWalletsResponse>> =>
+    adminAxiosInstance.post('/admin/bots/backfill-user-wallets', { dryRun, includeResults }),
   restoreBot: (botId: string): Promise<AxiosResponse<Bot>> => 
     adminAxiosInstance.post(`/admin/bots/${botId}/restore`),
   stopRunningBot: (): Promise<AxiosResponse<{ message: string; botstoppedData: Array<{

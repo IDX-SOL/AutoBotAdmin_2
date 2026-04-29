@@ -8,6 +8,32 @@ import { toast } from 'sonner';
 import adminApiService from '../../../../../utils/adminApiService';
 import AdminLayout from '@/components/admin/AdminLayout';
 
+const KOLKATA = { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' };
+
+function formatDateTime(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString('en-IN', KOLKATA);
+}
+
+/** Scalar or JSON preview for V8 pool rows (privateKey never sent from API). */
+function PoolField({ label, value }) {
+  if (value === undefined) return null;
+  const isObj = value !== null && typeof value === 'object';
+  return (
+    <div>
+      <p className="text-xs text-gray-400">{label}</p>
+      {isObj ? (
+        <pre className="text-[11px] text-gray-200 font-mono whitespace-pre-wrap break-all mt-1 p-2 bg-gray-900/60 rounded border border-gray-600/40 max-h-40 overflow-y-auto">
+          {JSON.stringify(value, null, 2)}
+        </pre>
+      ) : (
+        <p className="text-sm text-white font-mono break-all">{value === null ? '—' : String(value)}</p>
+      )}
+    </div>
+  );
+}
+
 export default function BotTradeWalletsPage() {
   const params = useParams();
   const botId = params.botId;
@@ -22,6 +48,8 @@ export default function BotTradeWalletsPage() {
   const [checkAllTradeWallets, setCheckAllTradeWallets] = useState(false);
   const [checkResults, setCheckResults] = useState(null);
   const [copiedAddresses, setCopiedAddresses] = useState(new Set());
+  const [walletSource, setWalletSource] = useState(null);
+  const [filterTokenMint, setFilterTokenMint] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,12 +62,20 @@ export default function BotTradeWalletsPage() {
         
         // Fetch trade wallets
         const walletsResponse = await adminApiService.getBotTradeWallets(botId);
-        setTradeWallets(walletsResponse.data.botTeradeWalletsData || []);
+        const payload = walletsResponse.data;
+        setTradeWallets(payload.botTeradeWalletsData || []);
+        setWalletSource(payload.walletSource || null);
+        setFilterTokenMint(payload.filterTokenMint || null);
         
       } catch (err) {
         console.error('Error fetching data:', err);
         if (err.response?.status === 404) {
-          setError('Trade wallets file not found. Please generate wallets first.');
+          const detail = err.response?.data?.details || '';
+          setError(
+            detail.includes('trade-wallets-pool')
+              ? err.response?.data?.error || 'Trade wallets pool file not found on the server.'
+              : 'Trade wallets file not found. Please generate wallets first.'
+          );
         } else {
           setError(err.response?.data?.error || 'Failed to fetch data');
         }
@@ -585,20 +621,121 @@ export default function BotTradeWalletsPage() {
 
         {/* Trade Wallets */}
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-white mb-4">
-            Trade Wallets ({tradeWallets.length})
+          <h2 className="text-2xl font-semibold text-white mb-2">
+            {walletSource === 'trade-wallets-pool'
+              ? `V8 pool wallets (${tradeWallets.length})`
+              : `Trade Wallets (${tradeWallets.length})`}
           </h2>
+          {walletSource === 'trade-wallets-pool' && filterTokenMint && (
+            <p className="text-sm text-gray-400 mb-4">
+              Rows from <span className="text-gray-300 font-mono">trade-wallets-pool.json</span> where{' '}
+              <span className="text-gray-300">lastUsedByToken</span> includes this bot mint (same schema as{' '}
+              <span className="font-mono text-gray-300">docs/trade-wallets-pool.json</span>). Private keys are not returned.
+            </p>
+          )}
+          {walletSource === 'trade-wallets-pool' && filterTokenMint && (
+            <div className="mb-4 p-3 rounded-lg bg-gray-800/80 border border-gray-600/50">
+              <p className="text-xs text-gray-400 mb-1">Bot token mint (filter)</p>
+              <div className="flex items-start gap-2">
+                <p className="text-sm text-amber-200/90 font-mono break-all flex-1">{filterTokenMint}</p>
+                <button
+                  type="button"
+                  onClick={() => copyWalletAddress(filterTokenMint)}
+                  className="p-1 hover:bg-gray-600 rounded transition-colors shrink-0"
+                  title="Copy mint"
+                >
+                  {copiedAddresses.has(filterTokenMint) ? (
+                    <CheckCircle className="h-4 w-4 text-green-400" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-gray-400 hover:text-white" />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
           
           {tradeWallets.length === 0 ? (
             <div className="text-center py-12">
               <Wallet className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No trade wallets found for this bot</p>
+              <p className="text-gray-400 text-lg">
+                {walletSource === 'trade-wallets-pool'
+                  ? 'No pool wallets have lastUsedByToken entries for this bot mint'
+                  : 'No trade wallets found for this bot'}
+              </p>
+            </div>
+          ) : walletSource === 'trade-wallets-pool' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {tradeWallets.map((wallet, index) => {
+                const orderedKeys = Object.keys(wallet).filter((k) => k !== 'privateKey').sort();
+                return (
+                  <div
+                    key={wallet.publicKey || index}
+                    className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(wallet.status)}
+                        <span className={`text-sm font-medium capitalize ${getStatusColor(wallet.status)}`}>
+                          {wallet.status || 'unknown'}
+                        </span>
+                      </div>
+                    </div>
+                    {(wallet.lastUsedAtForBotToken != null || wallet.lastUsedIndexForBotToken != null) && (
+                      <div className="mb-4 p-3 rounded-lg bg-amber-900/20 border border-amber-700/40 space-y-1">
+                        <p className="text-xs text-amber-200/80 font-medium">Last use for this bot mint</p>
+                        {wallet.lastUsedAtForBotToken != null && (
+                          <p className="text-sm text-white">{formatDateTime(wallet.lastUsedAtForBotToken)}</p>
+                        )}
+                        {wallet.lastUsedIndexForBotToken != null && (
+                          <p className="text-xs text-gray-400">
+                            Pool index (lastUsedIndexByToken): {wallet.lastUsedIndexForBotToken}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-400">Public Key</p>
+                        <div className="flex items-start gap-2 mt-1">
+                          <p className="text-sm text-white font-mono break-all flex-1">{wallet.publicKey || 'N/A'}</p>
+                          {wallet.publicKey && (
+                            <button
+                              type="button"
+                              onClick={() => copyWalletAddress(wallet.publicKey)}
+                              className="p-1 hover:bg-gray-600 rounded transition-colors shrink-0"
+                              title="Copy public key"
+                            >
+                              {copiedAddresses.has(wallet.publicKey) ? (
+                                <CheckCircle className="h-3 w-3 text-green-400" />
+                              ) : (
+                                <Copy className="h-3 w-3 text-gray-400 hover:text-white" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {orderedKeys.map((key) => {
+                        if (
+                          [
+                            'publicKey',
+                            'status',
+                            'lastUsedAtForBotToken',
+                            'lastUsedIndexForBotToken'
+                          ].includes(key)
+                        ) {
+                          return null;
+                        }
+                        return <PoolField key={key} label={key} value={wallet[key]} />;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tradeWallets
                 .sort((a, b) => {
-                  // Sort by createdAt in descending order (most recent first)
                   const dateA = new Date(a.createdAt || 0);
                   const dateB = new Date(b.createdAt || 0);
                   return dateB - dateA;
@@ -627,11 +764,7 @@ export default function BotTradeWalletsPage() {
                       <div>
                         <p className="text-xs text-gray-400">Created</p>
                         <p className="text-sm text-white">
-                          {wallet.createdAt ? new Date(wallet.createdAt).toLocaleString('en-IN', { 
-                  timeZone: 'Asia/Kolkata',
-                  dateStyle: 'short',
-                  timeStyle: 'short'
-                }) : 'Unknown'}
+                          {wallet.createdAt ? formatDateTime(wallet.createdAt) : 'Unknown'}
                         </p>
                       </div>
                     </div>
@@ -642,11 +775,7 @@ export default function BotTradeWalletsPage() {
                         <div>
                           <p className="text-xs text-gray-400">Closed</p>
                           <p className="text-sm text-white">
-                            {new Date(wallet.closedAt).toLocaleString('en-IN', { 
-                  timeZone: 'Asia/Kolkata',
-                  dateStyle: 'short',
-                  timeStyle: 'short'
-                })}
+                            {formatDateTime(wallet.closedAt)}
                           </p>
                         </div>
                       </div>
