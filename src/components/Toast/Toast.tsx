@@ -47,15 +47,22 @@ const Toast: React.FC<ToastProps> = ({ message, type = 'info', onClose, duration
   };
 
   return (
-    <div className={`max-w-sm w-full p-4 rounded-lg border shadow-2xl backdrop-blur-xl ${getBgColor()} animate-in slide-in-from-right-full duration-300 toast-notification`}>
-      <div className="flex items-start space-x-3">
-        {getIcon()}
-        <div className="flex-1">
-          <p className="text-sm font-medium">{message}</p>
+    <div
+      className={`w-full max-w-full p-3 sm:p-4 rounded-lg border shadow-2xl backdrop-blur-xl ${getBgColor()} animate-in fade-in slide-in-from-top-2 sm:slide-in-from-right-full duration-300 toast-notification`}
+      role="status"
+    >
+      <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+        <span className="shrink-0 pt-0.5">{getIcon()}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium leading-snug break-words [overflow-wrap:anywhere]">
+            {message}
+          </p>
         </div>
         <button
+          type="button"
           onClick={onClose}
-          className="flex-shrink-0 text-gray-400 hover:text-gray-200 transition-colors"
+          className="shrink-0 -m-1 p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors touch-manipulation"
+          aria-label="Dismiss notification"
         >
           <X className="w-4 h-4" />
         </button>

@@ -19,9 +19,18 @@ import {
   Play,
   Square,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/Toast/ToastContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminBots() {
   const [bots, setBots] = useState<Bot[]>([]);
@@ -72,6 +81,8 @@ export default function AdminBots() {
   }>>([]);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [responseTitle, setResponseTitle] = useState('');
+  const [stopAllConfirmOpen, setStopAllConfirmOpen] = useState(false);
+  const [startAllConfirmOpen, setStartAllConfirmOpen] = useState(false);
   const { showSuccess, showError } = useToast();
 
   const updateBotUserWalletInState = useCallback((botId: string, userWallet: string) => {
@@ -81,6 +92,32 @@ export default function AdminBots() {
       )
     );
   }, []);
+
+  /** Re-fetch one bot from the API and merge into list state (no full page reload). */
+  const refreshSingleBot = useCallback(async (botId: string) => {
+    try {
+      const response = await adminApiService.getBot(botId);
+      const updated = response.data as Bot;
+      if (!updated) return;
+      setBots((prev) =>
+        prev.map((b) => {
+          if (String(b.id) !== String(botId)) return b;
+          return {
+            ...b,
+            ...updated,
+            user: updated.user ? { ...b.user, ...updated.user } : b.user,
+          };
+        })
+      );
+    } catch (error: unknown) {
+      const maybeError = error as {
+        response?: { data?: { error?: string; message?: string } };
+      };
+      const apiMessage =
+        maybeError?.response?.data?.error || maybeError?.response?.data?.message;
+      showError(apiMessage || `Could not refresh bot ${botId}`);
+    }
+  }, [showError]);
 
   const fetchBots = useCallback(async () => {
     try {
@@ -182,13 +219,7 @@ export default function AdminBots() {
     }
   };
 
-  const handleStopAllBots = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to stop all running bots? This action will stop all currently running bots.'
-    );
-
-    if (!confirmed) return;
-
+  const executeStopAllRunning = async () => {
     setIsBulkOperating(true);
     try {
       const response = await adminApiService.stopRunningBot();
@@ -198,7 +229,7 @@ export default function AdminBots() {
       setResponseDetails((botstoppedData || []) as typeof responseDetails);
       setResponseTitle('Bot Stop Results');
       setShowResponseModal(true);
-      fetchBots(); // Refresh the list
+      fetchBots();
     } catch (error) {
       console.error('Error stopping bots:', error);
       showError('Failed to stop bots');
@@ -207,13 +238,7 @@ export default function AdminBots() {
     }
   };
 
-  const handleStartAllBots = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to start all stopped bots? This action will start all bots that were stopped by admin.'
-    );
-
-    if (!confirmed) return;
-
+  const executeStartAllStopped = async () => {
     setIsBulkOperating(true);
     try {
       const response = await adminApiService.startRunningBot();
@@ -223,7 +248,7 @@ export default function AdminBots() {
       setResponseDetails((botstartedData || []) as typeof responseDetails);
       setResponseTitle('Bot Start Results');
       setShowResponseModal(true);
-      fetchBots(); // Refresh the list
+      fetchBots();
     } catch (error) {
       console.error('Error starting bots:', error);
       showError('Failed to start bots');
@@ -327,6 +352,7 @@ export default function AdminBots() {
     const [copiedField, setCopiedField] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isBackfillingWallet, setIsBackfillingWallet] = useState(false);
+    const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
 
     if (!bot) return null;
 
@@ -361,6 +387,16 @@ export default function AdminBots() {
       !!bot.middleWalletAddress &&
       bot.firstFundAdd === true;
 
+    const handleRefreshStatus = async () => {
+      if (isRefreshingStatus) return;
+      setIsRefreshingStatus(true);
+      try {
+        await refreshSingleBot(bot.id);
+      } finally {
+        setIsRefreshingStatus(false);
+      }
+    };
+
     const handleBackfillUserWallet = async () => {
       if (!canBackfillUserWallet || isBackfillingWallet) return;
 
@@ -389,16 +425,16 @@ export default function AdminBots() {
     };
 
     return (
-      <div className="bg-gray-800/80 rounded-lg p-3 border border-gray-700/50 hover:border-gray-600/60 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20 group">
-        {/* Header Section - Optimized Layout */}
-        <div className="flex items-center justify-between gap-3 mb-3">
+      <div className="bg-gray-800/80 rounded-lg p-3 sm:p-4 border border-gray-700/50 hover:border-gray-600/60 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20 group overflow-hidden">
+        {/* Header Section — stack on narrow screens */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
           {/* Bot Info */}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex items-center gap-3 min-w-0 flex-1 w-full">
             <div className="h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0 ring-1 ring-green-500/20">
               <BotIcon className="h-5 w-5 text-white" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-bold text-white truncate">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <h3 className="text-base sm:text-lg font-bold text-white truncate">
                 {bot.botName || "Unnamed Bot"}
               </h3>
               <Link href={`/admin/users/${bot.user?.id}`} className="text-xs text-blue-400 truncate block hover:text-blue-300 transition-colors">
@@ -431,9 +467,21 @@ export default function AdminBots() {
           </div>
 
           {/* Status & Fund/Recharge Status */}
-          <div className="flex flex-col gap-2 items-end">
-            {getStatusBadge(bot.status)}
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-2 items-stretch sm:items-end w-full sm:w-auto shrink-0">
+            <div className="flex items-center gap-2 justify-between sm:justify-end w-full min-w-0">
+              <button
+                type="button"
+                onClick={handleRefreshStatus}
+                disabled={isRefreshingStatus}
+                className="inline-flex items-center justify-center p-1.5 rounded-lg border border-gray-600/60 bg-gray-700/40 text-gray-300 hover:text-white hover:bg-gray-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation shrink-0"
+                title="Refresh bot status"
+                aria-label="Refresh bot status"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshingStatus ? "animate-spin" : ""}`} />
+              </button>
+              <div className="min-w-0 flex justify-end">{getStatusBadge(bot.status)}</div>
+            </div>
+            <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
               <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/60 border border-gray-700/50 rounded">
                 <div className={`w-2 h-2 rounded-full ${bot?.firstFundAdd ? 'bg-green-400' : 'bg-red-400'}`}></div>
                 <span className="text-xs text-gray-300">Fund</span>
@@ -456,8 +504,8 @@ export default function AdminBots() {
           </div>
         </div>
 
-        {/* Stats & Wallet Information - Optimized Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+        {/* Stats & Wallet Information */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
           {/* Engine & Token */}
           <div className="text-center p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-gray-400 text-xs mb-1">Engine</p>
@@ -532,8 +580,8 @@ export default function AdminBots() {
           </div>
         </div>
 
-        {/* Additional Wallet Information - Horizontal Layout */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
+        {/* Additional wallet rows */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
           {/* Middle Wallet */}
           <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
             <p className="text-xs text-gray-400 mb-1">Middle Wallet</p>
@@ -593,8 +641,8 @@ export default function AdminBots() {
           </div>
         </div>
 
-        {/* Activity Section - Horizontal Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-3">
+        {/* Activity Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
           {/* Last Log */}
           {bot?.lastLogs && bot.lastLogs.length > 0 ? (
             <div className="p-2 bg-gray-700/30 rounded border border-gray-600/30">
@@ -676,13 +724,14 @@ export default function AdminBots() {
         {/* Created Date */}
         
 
-        {/* Action Buttons - Optimized Layout */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-700/30">
-          <div className="flex items-center gap-2">
+        {/* Action buttons — wrap / grid on small screens */}
+        <div className="flex flex-col gap-3 pt-2 border-t border-gray-700/30 sm:flex-row sm:items-start sm:justify-between">
+          <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:flex-wrap sm:gap-2 sm:flex-1 sm:min-w-0">
             <button
+              type="button"
               onClick={handleBackfillUserWallet}
               disabled={!canBackfillUserWallet || isBackfillingWallet}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title={
                 canBackfillUserWallet
                   ? 'Set user wallet from first inbound fund on middle wallet'
@@ -703,7 +752,7 @@ export default function AdminBots() {
             </button>
             <Link
               href={`/admin/bots/${bot.id}/trade-wallets`}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-all duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-all duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => setIsLoading(true)}
             >
               {isLoading ? (
@@ -721,7 +770,7 @@ export default function AdminBots() {
             
             <Link
               href={`/admin/bots/${bot.id}`}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-all duration-200"
+              className="inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-all duration-200"
             >
               <BotIcon className="h-3 w-3" />
               <span>Details</span>
@@ -729,7 +778,7 @@ export default function AdminBots() {
             
             <Link
               href={`/admin/bots/${bot.id}/logs`}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-all duration-200"
+              className="inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-all duration-200"
             >
               <Activity className="h-3 w-3" />
               <span>Logs</span>
@@ -737,7 +786,7 @@ export default function AdminBots() {
           </div>
 
           {/* Additional Info */}
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 w-full sm:w-auto sm:justify-end">
             {bot.lastTradeAt && (
               <span className="flex items-center gap-1">
                 <Activity className="h-3 w-3" />
@@ -770,13 +819,13 @@ export default function AdminBots() {
   };
 
   const Pagination = () => (
-    <div className="flex items-center justify-between">
-      <div className="text-sm text-gray-400">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-sm text-gray-400 text-center sm:text-left">
         Showing {(currentPage - 1) * 20 + 1} to{" "}
         {Math.min(currentPage * 20, pagination.total)} of {pagination.total}{" "}
         bots
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center justify-center gap-1 sm:justify-end flex-wrap">
         <button
           onClick={() => setCurrentPage(currentPage - 1)}
           disabled={currentPage === 1}
@@ -823,73 +872,139 @@ export default function AdminBots() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Bots Management</h1>
-            <p className="text-gray-400 text-lg">
+        <Dialog open={stopAllConfirmOpen} onOpenChange={setStopAllConfirmOpen}>
+          <DialogContent className="border-gray-600 bg-gray-800 text-gray-100 sm:max-w-md [&>button]:text-gray-400 [&>button]:hover:text-white">
+            <DialogHeader>
+              <DialogTitle className="text-white">Stop all running bots?</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                This will stop every bot that is currently running. You can review per-bot results in the summary that opens afterward.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => setStopAllConfirmOpen(false)}
+                className="inline-flex h-10 w-full items-center justify-center rounded-md border border-gray-600 bg-gray-700 px-4 text-sm font-medium text-gray-200 hover:bg-gray-600 sm:w-auto"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isBulkOperating}
+                onClick={async () => {
+                  setStopAllConfirmOpen(false);
+                  await executeStopAllRunning();
+                }}
+                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-red-600 px-4 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              >
+                Stop all running
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={startAllConfirmOpen} onOpenChange={setStartAllConfirmOpen}>
+          <DialogContent className="border-gray-600 bg-gray-800 text-gray-100 sm:max-w-md [&>button]:text-gray-400 [&>button]:hover:text-white">
+            <DialogHeader>
+              <DialogTitle className="text-white">Start all stopped bots?</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                This will start every bot that is eligible and currently stopped (e.g. stopped by admin). Per-bot results appear in the summary afterward.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => setStartAllConfirmOpen(false)}
+                className="inline-flex h-10 w-full items-center justify-center rounded-md border border-gray-600 bg-gray-700 px-4 text-sm font-medium text-gray-200 hover:bg-gray-600 sm:w-auto"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isBulkOperating}
+                onClick={async () => {
+                  setStartAllConfirmOpen(false);
+                  await executeStartAllStopped();
+                }}
+                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              >
+                Start all stopped
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Header — stack below lg; side-by-side from lg up (fits ~1024–1280 content width) */}
+        <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6 mb-6 sm:mb-8">
+          <div className="min-w-0 lg:max-w-[min(100%,28rem)] lg:shrink-0">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2">Bots Management</h1>
+            <p className="text-gray-400 text-sm sm:text-base lg:text-lg leading-snug">
               Monitor and manage trading bots
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-400">
+          <div className="w-full min-w-0 flex flex-col gap-2 sm:gap-3 lg:w-auto lg:max-w-[min(100%,52rem)] lg:flex-1 lg:min-w-0">
+            <span className="text-sm text-gray-400 lg:text-right tabular-nums">
               Total: {pagination.total || 0} bots
             </span>
-
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-2 w-full">
             {/* Bulk Control Buttons */}
             <button
-              onClick={handleStopAllBots}
+              type="button"
+              onClick={() => setStopAllConfirmOpen(true)}
               disabled={isBulkOperating}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 sm:px-4 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-normal text-center min-h-[44px] touch-manipulation"
             >
               {isBulkOperating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
               ) : (
-                <Square className="h-4 w-4" />
+                <Square className="h-4 w-4 shrink-0" />
               )}
               <span>Stop All Running</span>
             </button>
 
             <button
-              onClick={handleStartAllBots}
+              type="button"
+              onClick={() => setStartAllConfirmOpen(true)}
               disabled={isBulkOperating}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 sm:px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-normal text-center min-h-[44px] touch-manipulation"
             >
               {isBulkOperating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
               ) : (
-                <Play className="h-4 w-4" />
+                <Play className="h-4 w-4 shrink-0" />
               )}
               <span>Start All Stopped</span>
             </button>
 
             <button
+              type="button"
               onClick={handleBackfillAllEligibleBots}
               disabled={isBulkBackfillingWallets}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 sm:px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-normal text-center min-h-[44px] touch-manipulation min-[420px]:col-span-2 lg:col-span-1"
             >
               {isBulkBackfillingWallets ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
               ) : (
-                <Wallet className="h-4 w-4" />
+                <Wallet className="h-4 w-4 shrink-0" />
               )}
               <span>Fetch User Wallet (Global)</span>
             </button>
 
             <Link
               href="/admin/bots/logs"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 sm:px-4 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-medium rounded-md transition-colors min-h-[44px] touch-manipulation min-[420px]:col-span-2 lg:col-span-1"
             >
-              <Activity className="h-4 w-4" />
+              <Activity className="h-4 w-4 shrink-0" />
               <span>View All Logs</span>
             </Link>
+            </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-gray-800/80 rounded-xl p-6 border border-gray-700/50 shadow-lg">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
+        <div className="bg-gray-800/80 rounded-xl p-4 sm:p-6 border border-gray-700/50 shadow-lg">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="flex-1 min-w-0">
               <label className="block text-sm font-medium text-gray-300 mb-2">Filter by Status</label>
               <select
                 value={statusFilter}
@@ -904,14 +1019,15 @@ export default function AdminBots() {
               </select>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex sm:shrink-0">
               <button
+                type="button"
                 onClick={() => {
                   setStatusFilter("");
                   setDeletedFilter("");
                   setCurrentPage(1);
                 }}
-                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-md"
+                className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-md"
               >
                 Clear Filters
               </button>
@@ -920,7 +1036,7 @@ export default function AdminBots() {
         </div>
 
         {/* Bots Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
           {bots.map((bot) => (
             <BotCardAdmin key={bot.id} bot={bot} />
           ))}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Wallet, Calendar, Clock, CheckCircle, XCircle, RefreshCw, Play, Copy } from 'lucide-react';
+import { ArrowLeft, Wallet, Calendar, Clock, CheckCircle, XCircle, RefreshCw, Play, Copy, ExternalLink, Bookmark, History } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import adminApiService from '../../../../../utils/adminApiService';
@@ -39,6 +39,7 @@ export default function BotTradeWalletsPage() {
   const botId = params.botId;
   
   const [bot, setBot] = useState(null);
+  const [botRecordMissing, setBotRecordMissing] = useState(false);
   const [tradeWallets, setTradeWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,18 +52,43 @@ export default function BotTradeWalletsPage() {
   const [walletSource, setWalletSource] = useState(null);
   const [filterTokenMint, setFilterTokenMint] = useState(null);
 
+  const isWorkerGridWalletSource =
+    walletSource === 'mini-workers-pool' || walletSource === 'v12-turbo-workers';
+
+  /** Re-fetch worker rows so reserved / retired match the pool after a balance check. */
+  const refreshTradeWalletsFromApi = async () => {
+    if (!botId) return;
+    try {
+      const walletsResponse = await adminApiService.getBotTradeWallets(botId);
+      const payload = walletsResponse.data;
+      setTradeWallets(payload.botTeradeWalletsData || []);
+      setWalletSource(payload.walletSource || null);
+      setFilterTokenMint(payload.filterTokenMint || null);
+      setBotRecordMissing(Boolean(payload.botRecordMissing));
+    } catch (e) {
+      console.error('Failed to refresh trade wallets list:', e);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch bot details
-        const botResponse = await adminApiService.getBot(botId);
-        setBot(botResponse.data);
-        
-        // Fetch trade wallets
+        setError(null);
+        setBotRecordMissing(false);
+
+        let botData = null;
+        try {
+          const botResponse = await adminApiService.getBot(botId);
+          botData = botResponse.data;
+        } catch (err) {
+          if (err.response?.status !== 404) throw err;
+        }
+
         const walletsResponse = await adminApiService.getBotTradeWallets(botId);
         const payload = walletsResponse.data;
+        setBot(botData);
+        setBotRecordMissing(Boolean(payload.botRecordMissing));
         setTradeWallets(payload.botTeradeWalletsData || []);
         setWalletSource(payload.walletSource || null);
         setFilterTokenMint(payload.filterTokenMint || null);
@@ -93,6 +119,10 @@ export default function BotTradeWalletsPage() {
   const checkBotWallets = async () => {
     if (!botId) {
       toast.error('Bot ID not found');
+      return;
+    }
+    if (!bot && !botRecordMissing) {
+      toast.error('No bot record and no orphan worker list on this page. Restore the bot or open a URL that still loads workers from the pool.');
       return;
     }
 
@@ -139,6 +169,8 @@ export default function BotTradeWalletsPage() {
         } else if (checkAllTradeWallets && data.tradeWallets > 0) {
           toast.info(`All trade wallets for this bot were checked (no time filtering)`);
         }
+
+        await refreshTradeWalletsFromApi();
       }
     } catch (error) {
       console.error('Error checking bot wallets:', error);
@@ -175,6 +207,12 @@ export default function BotTradeWalletsPage() {
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'closed':
         return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'reserved':
+        return <CheckCircle className="h-4 w-4 text-emerald-400" />;
+      case 'snapshot':
+        return <Bookmark className="h-4 w-4 text-sky-400" />;
+      case 'retired':
+        return <History className="h-4 w-4 text-gray-400" />;
       default:
         return <Wallet className="h-4 w-4 text-gray-500" />;
     }
@@ -186,6 +224,12 @@ export default function BotTradeWalletsPage() {
         return 'text-green-500';
       case 'closed':
         return 'text-red-500';
+      case 'reserved':
+        return 'text-emerald-400';
+      case 'snapshot':
+        return 'text-sky-400';
+      case 'retired':
+        return 'text-gray-400';
       default:
         return 'text-gray-500';
     }
@@ -249,12 +293,27 @@ export default function BotTradeWalletsPage() {
           </div>
           
           <h1 className="text-3xl font-bold text-white mb-2">
-            Trade Wallets for {bot?.botName || 'Bot'}
+            Trade Wallets for{' '}
+            {bot?.botName || (botRecordMissing ? `Bot ${botId} (removed)` : 'Bot')}
           </h1>
           <p className="text-gray-400">
-            Bot ID: {botId} | Owner: {bot?.user?.username || 'Unknown'}
+            Bot ID: {botId}
+            {bot ? ` | Owner: ${bot?.user?.username || 'Unknown'}` : ''}
+            {botRecordMissing && !bot
+              ? ' — database record removed; pool workers for this id are shown if still reserved.'
+              : ''}
           </p>
         </div>
+
+        {botRecordMissing && !bot && (
+          <div className="mb-6 rounded-lg border border-amber-700/50 bg-amber-900/20 px-4 py-3 text-sm text-amber-100/95">
+            This bot is no longer in the database.
+            {walletSource === 'v12-turbo-workers' || walletSource === 'mini-workers-pool'
+              ? ' Each worker shows reserved (still in trade-wallets-pool for this bot) or retired (address kept for history, no longer held in the pool for this bot). '
+              : ' If workers stayed reserved after refund, they appear below so you can verify balances (e.g. on Solscan). '}
+            &quot;Check Wallets&quot; runs from the pool list even when the bot row is missing.
+          </div>
+        )}
 
         {/* Bot Info Card */}
         {bot && (
@@ -283,7 +342,7 @@ export default function BotTradeWalletsPage() {
                     Check Bot Wallets
                   </h3>
                   <p className="text-sm text-gray-400">
-                    Check SOL and token balances for this bot&apos;s owner, middle, and trade wallets (with optional filtering)
+                    Check native SOL and this bot&apos;s token mint only (owner, middle, and trade / pool workers; optional time filter applies to legacy trade-wallets.json lists)
                   </p>
                 </div>
               </div>
@@ -576,17 +635,28 @@ export default function BotTradeWalletsPage() {
                   <div className="bg-gray-700/50 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-gray-300">Owner Wallet</p>
-                      <button
-                        onClick={() => copyWalletAddress(bot.ownerWalletAddress)}
-                        className="p-1 hover:bg-gray-600 rounded transition-colors group"
-                        title="Copy wallet address"
-                      >
-                        {copiedAddresses.has(bot.ownerWalletAddress) ? (
-                          <CheckCircle className="h-4 w-4 text-green-400" />
-                        ) : (
-                          <Copy className="h-4 w-4 text-gray-400 group-hover:text-white" />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => copyWalletAddress(bot.ownerWalletAddress)}
+                          className="p-1 hover:bg-gray-600 rounded transition-colors group"
+                          title="Copy wallet address"
+                        >
+                          {copiedAddresses.has(bot.ownerWalletAddress) ? (
+                            <CheckCircle className="h-4 w-4 text-green-400" />
+                          ) : (
+                            <Copy className="h-4 w-4 text-gray-400 group-hover:text-white" />
+                          )}
+                        </button>
+                        <Link
+                          href={`https://solscan.io/address/${bot.ownerWalletAddress}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-gray-400 hover:text-blue-400 rounded transition-colors"
+                          title="View on Solscan"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      </div>
                     </div>
                     <p className="text-sm text-white font-mono break-all">
                       {bot.ownerWalletAddress}
@@ -597,17 +667,28 @@ export default function BotTradeWalletsPage() {
                   <div className="bg-gray-700/50 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-gray-300">Middle Wallet</p>
-                      <button
-                        onClick={() => copyWalletAddress(bot.middleWalletAddress)}
-                        className="p-1 hover:bg-gray-600 rounded transition-colors group"
-                        title="Copy wallet address"
-                      >
-                        {copiedAddresses.has(bot.middleWalletAddress) ? (
-                          <CheckCircle className="h-4 w-4 text-green-400" />
-                        ) : (
-                          <Copy className="h-4 w-4 text-gray-400 group-hover:text-white" />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => copyWalletAddress(bot.middleWalletAddress)}
+                          className="p-1 hover:bg-gray-600 rounded transition-colors group"
+                          title="Copy wallet address"
+                        >
+                          {copiedAddresses.has(bot.middleWalletAddress) ? (
+                            <CheckCircle className="h-4 w-4 text-green-400" />
+                          ) : (
+                            <Copy className="h-4 w-4 text-gray-400 group-hover:text-white" />
+                          )}
+                        </button>
+                        <Link
+                          href={`https://solscan.io/address/${bot.middleWalletAddress}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-gray-400 hover:text-blue-400 rounded transition-colors"
+                          title="View on Solscan"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      </div>
                     </div>
                     <p className="text-sm text-white font-mono break-all">
                       {bot.middleWalletAddress}
@@ -624,8 +705,28 @@ export default function BotTradeWalletsPage() {
           <h2 className="text-2xl font-semibold text-white mb-2">
             {walletSource === 'trade-wallets-pool'
               ? `V8 pool wallets (${tradeWallets.length})`
-              : `Trade Wallets (${tradeWallets.length})`}
+              : walletSource === 'mini-workers-pool'
+                ? `Mini workers (${tradeWallets.length})`
+                : walletSource === 'v12-turbo-workers'
+                  ? `V12 Turbo workers (${tradeWallets.length})`
+                  : `Trade Wallets (${tradeWallets.length})`}
           </h2>
+          {walletSource === 'mini-workers-pool' && (
+            <p className="text-sm text-gray-400 mb-4">
+              MiniBuy / MiniBuySell worker public keys only (never private keys).{' '}
+              <span className="text-emerald-400/90">Reserved</span> = still in{' '}
+              <span className="font-mono text-gray-300">trade-wallets-pool.json</span> as trade workers for this bot;{' '}
+              <span className="text-gray-400/90">Retired</span> = no longer in the pool for this bot (same semantics as V12 Turbo; pubkeys can remain in admin history after refund).
+            </p>
+          )}
+          {walletSource === 'v12-turbo-workers' && (
+            <p className="text-sm text-gray-400 mb-4">
+              All worker public keys that have ever traded for this bot (from server lifetime registry; never private keys).{' '}
+              <span className="text-emerald-400/90">Reserved</span> = still present in{' '}
+              <span className="font-mono text-gray-300">trade-wallets-pool.json</span> for this bot id;{' '}
+              <span className="text-gray-400/90">Retired</span> = rotated out of the pool (no longer reserved for this bot).
+            </p>
+          )}
           {walletSource === 'trade-wallets-pool' && filterTokenMint && (
             <p className="text-sm text-gray-400 mb-4">
               Rows from <span className="text-gray-300 font-mono">trade-wallets-pool.json</span> where{' '}
@@ -660,7 +761,13 @@ export default function BotTradeWalletsPage() {
               <p className="text-gray-400 text-lg">
                 {walletSource === 'trade-wallets-pool'
                   ? 'No pool wallets have lastUsedByToken entries for this bot mint'
-                  : 'No trade wallets found for this bot'}
+                  : walletSource === 'mini-workers-pool'
+                    ? botRecordMissing
+                      ? 'No workers found from pool, DB snapshot, or server wallets-debug exports (bot-{id}-wallets-*.txt). Ensure the bot ran once and debug exports exist on the API host.'
+                      : 'No workers found from pool, snapshot, or wallets-debug. Start the bot once, or check the server engine/miniBuy(Sell)/wallets-debug folder and trade-wallets-pool.json.'
+                    : walletSource === 'v12-turbo-workers'
+                      ? 'No lifetime trade-worker registry on the server for this bot id yet (and no pool-only rows). After trades run, bot-{id}-trade-workers-keys.json is populated; ensure the backend can read engine/v12-turbo/wallets-debug/.'
+                      : 'No trade wallets found for this bot'}
               </p>
             </div>
           ) : walletSource === 'trade-wallets-pool' ? (
@@ -731,6 +838,69 @@ export default function BotTradeWalletsPage() {
                   </div>
                 );
               })}
+            </div>
+          ) : isWorkerGridWalletSource ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {tradeWallets.map((wallet) => (
+                <div
+                  key={wallet.publicKey || wallet.workerIndex}
+                  className="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-gray-600 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-amber-400/90">
+                      Worker {wallet.workerIndex ?? '—'}
+                    </span>
+                    <span
+                      className="flex items-center gap-1 shrink-0"
+                      title={
+                        wallet.status === 'reserved'
+                          ? 'Reserved in pool file'
+                          : wallet.status === 'retired' || wallet.status === 'snapshot'
+                            ? 'No longer in pool for this bot (admin history / rotated out)'
+                            : ''
+                      }
+                    >
+                      {getStatusIcon(wallet.status)}
+                      {wallet.status && (
+                        <span className={`text-[10px] font-medium capitalize ${getStatusColor(wallet.status)}`}>
+                          {wallet.status}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Public key</p>
+                    <div className="flex items-start gap-2">
+                      <p className="text-sm text-white font-mono break-all flex-1">{wallet.publicKey || 'N/A'}</p>
+                      {wallet.publicKey && wallet.publicKey !== 'N/A' && (
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => copyWalletAddress(wallet.publicKey)}
+                            className="p-1 hover:bg-gray-600 rounded transition-colors"
+                            title="Copy public key"
+                          >
+                            {copiedAddresses.has(wallet.publicKey) ? (
+                              <CheckCircle className="h-3 w-3 text-green-400" />
+                            ) : (
+                              <Copy className="h-3 w-3 text-gray-400 hover:text-white" />
+                            )}
+                          </button>
+                          <Link
+                            href={`https://solscan.io/address/${wallet.publicKey}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-gray-400 hover:text-blue-400 rounded transition-colors"
+                            title="View on Solscan"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

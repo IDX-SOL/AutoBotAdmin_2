@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [recentBots, setRecentBots] = useState<Bot[]>([]);
   const [recentActivity, setRecentActivity] = useState<Array<{
-    id: number;
+    id: string;
     type: string;
     message: string;
     timestamp: Date;
@@ -99,8 +99,11 @@ export default function AdminDashboard() {
             token?: string;
             campaign?: string;
             metadata?: Record<string, unknown>;
-          }) => ({
-            id: parseInt(activity.id) || 0,
+          }, index: number) => ({
+            id:
+              activity.id != null && String(activity.id).trim() !== ""
+                ? String(activity.id)
+                : `activity-${index}`,
             type: activity.type,
             message: activity.message,
             timestamp: new Date(activity.timestamp),
@@ -400,8 +403,11 @@ export default function AdminDashboard() {
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <h3 className="text-lg font-semibold text-white mb-4">Recent Activity Feed</h3>
           <div className="space-y-3">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+            {recentActivity.map((activity, index) => (
+              <div
+                key={`${activity.id}-${activity.type}-${activity.timestamp.getTime()}-${index}`}
+                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
+              >
                 <div className="flex items-center space-x-3">
                   <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <Activity className="h-4 w-4 text-white" />
