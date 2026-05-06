@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import adminApiService, { Bot } from "../../../utils/adminApiService";
 import {
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 
 export default function AdminBots() {
+  const SCROLL_POSITION_KEY = "admin-bots-scroll-position";
   const [bots, setBots] = useState<Bot[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -83,7 +84,13 @@ export default function AdminBots() {
   const [responseTitle, setResponseTitle] = useState('');
   const [stopAllConfirmOpen, setStopAllConfirmOpen] = useState(false);
   const [startAllConfirmOpen, setStartAllConfirmOpen] = useState(false);
+  const hasRestoredScrollRef = useRef(false);
   const { showSuccess, showError } = useToast();
+
+  const saveScrollPosition = useCallback(() => {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(SCROLL_POSITION_KEY, String(window.scrollY));
+  }, []);
 
   const updateBotUserWalletInState = useCallback((botId: string, userWallet: string) => {
     setBots((prevBots) =>
@@ -190,6 +197,46 @@ export default function AdminBots() {
   useEffect(() => {
     fetchBots();
   }, [fetchBots]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onScroll = () => {
+      // Avoid clobbering stored scroll with 0 before initial restore finishes.
+      if (!hasRestoredScrollRef.current) return;
+      saveScrollPosition();
+    };
+    const onPageHide = () => saveScrollPosition();
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [saveScrollPosition]);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined" || loading || hasRestoredScrollRef.current) return;
+
+    const savedScrollY = sessionStorage.getItem(SCROLL_POSITION_KEY);
+    if (!savedScrollY) {
+      hasRestoredScrollRef.current = true;
+      return;
+    }
+
+    const y = Number(savedScrollY);
+    if (!Number.isNaN(y)) {
+      // Restore once immediately and once on next frame to avoid late layout pushes.
+      window.scrollTo({ top: y, behavior: "auto" });
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: "auto" });
+      });
+    }
+
+    hasRestoredScrollRef.current = true;
+  }, [loading]);
   const handleDelete = async (id: string, botName?: string) => {
     // Show confirmation dialog
     const confirmed = window.confirm(
@@ -752,8 +799,12 @@ export default function AdminBots() {
             </button>
             <Link
               href={`/admin/bots/${bot.id}/trade-wallets`}
+              scroll={false}
               className={`inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-all duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={() => setIsLoading(true)}
+              onClick={() => {
+                saveScrollPosition();
+                setIsLoading(true);
+              }}
             >
               {isLoading ? (
                 <>
@@ -770,7 +821,9 @@ export default function AdminBots() {
             
             <Link
               href={`/admin/bots/${bot.id}`}
+              scroll={false}
               className="inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-all duration-200"
+              onClick={saveScrollPosition}
             >
               <BotIcon className="h-3 w-3" />
               <span>Details</span>
@@ -778,7 +831,9 @@ export default function AdminBots() {
             
             <Link
               href={`/admin/bots/${bot.id}/logs`}
+              scroll={false}
               className="inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-all duration-200"
+              onClick={saveScrollPosition}
             >
               <Activity className="h-3 w-3" />
               <span>Logs</span>
