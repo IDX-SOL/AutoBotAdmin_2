@@ -19,7 +19,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
-  color: string;
+  tone: string;
   change?: number;
 }
 
@@ -201,22 +201,22 @@ export default function AdminDashboard() {
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, change }: StatCardProps) => (
-    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+  const StatCard = ({ title, value, icon: Icon, tone, change }: StatCardProps) => (
+    <div className="rounded-xl border border-white/10 bg-[var(--panel)]/90 p-6 shadow-[0_0_28px_rgba(34,211,238,0.06)] backdrop-blur-lg transition-colors hover:border-cyan-400/35">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-400">{title}</p>
+          <p className="text-sm font-medium text-zinc-400">{title}</p>
           <p className="text-2xl font-bold text-white mt-1">
             {title === 'Conversion Rate' ? `${value}%` : value}
           </p>
           {change && (
-            <p className={`text-sm mt-1 ${change > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`text-sm mt-1 ${change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               {change > 0 ? '+' : ''}{change}% from last month
             </p>
           )}
         </div>
-        <div className={`p-3 rounded-lg ${color}`}>
-          <Icon className="h-6 w-6 text-white" />
+        <div className={`rounded-lg p-3 ${tone}`}>
+          <Icon className="h-6 w-6" />
         </div>
       </div>
     </div>
@@ -335,28 +335,28 @@ export default function AdminDashboard() {
             title="Total Users"
             value={stats?.totalUsers || 0}
             icon={Users}
-            color="bg-blue-600"
+            tone="bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-400/35"
             change={12}
           />
           <StatCard
             title="Total Bots"
             value={stats?.totalBots || 0}
             icon={BotIcon}
-            color="bg-green-600"
+            tone="bg-emerald-400/15 text-emerald-200 ring-1 ring-emerald-400/35"
             change={8}
           />
           <StatCard
             title="Active Bots"
             value={stats?.activeBots || 0}
             icon={Activity}
-            color="bg-purple-600"
+            tone="bg-violet-400/15 text-violet-200 ring-1 ring-violet-400/35"
             change={15}
           />
           <StatCard
             title="Total Admins"
             value={stats?.totalAdmins || 0}
             icon={AlertCircle}
-            color="bg-orange-600"
+            tone="bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/35"
           />
         </div>
 
@@ -366,21 +366,21 @@ export default function AdminDashboard() {
             title="Campaigns"
             value={loading ? '...' : campaignStats.totalCampaigns}
             icon={TrendingUp}
-            color="bg-indigo-600"
+            tone="bg-indigo-400/15 text-indigo-200 ring-1 ring-indigo-400/35"
             change={loading ? undefined : campaignStats.changeFromLastMonth}
           />
           <StatCard
             title="Validated Tokens"
             value={loading ? '...' : tokenStats.totalTokens}
             icon={Database}
-            color="bg-teal-600"
+            tone="bg-teal-400/15 text-teal-200 ring-1 ring-teal-400/35"
             change={loading ? undefined : tokenStats.changeFromLastMonth}
           />
           <StatCard
             title="Conversion Rate"
             value={loading ? '...' : campaignStats.conversionRate}
             icon={AlertCircle}
-            color="bg-yellow-600"
+            tone="bg-yellow-400/15 text-yellow-200 ring-1 ring-yellow-400/35"
             change={loading ? undefined : 8.2}
           />
         </div>
