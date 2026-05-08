@@ -67,28 +67,28 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-6">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl border border-cyan-400/35 bg-cyan-400/15">
             <Lock className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">Admin Login</h2>
-          <p className="text-gray-400">
+          <p className="text-zinc-400">
             {step === 'email' ? 'Enter your admin email to receive a one-time code' : 'Enter the 6-digit code sent to your email'}
           </p>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-8 border border-white/10">
+        <div className="rounded-2xl border border-white/10 bg-[var(--panel)]/90 p-8 shadow-[0_0_40px_rgba(34,211,238,0.08)] backdrop-blur-lg">
           {step === 'email' ? (
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-zinc-300">
                   Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
+                    <Mail className="h-5 w-5 text-zinc-400" />
                   </div>
                   <input
                     id="email"
@@ -98,7 +98,7 @@ export default function AdminLogin() {
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-xl bg-gray-800/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="block w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-3 text-white placeholder-zinc-500 focus:border-cyan-400/35 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                     placeholder="admin@example.com"
                   />
                 </div>
@@ -111,7 +111,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/35 bg-cyan-400/15 px-4 py-3 text-sm font-medium text-cyan-100 hover:bg-cyan-400/20 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                 {loading ? 'Sending…' : 'Send OTP'}
@@ -125,12 +125,12 @@ export default function AdminLogin() {
                 </div>
               )}
               <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="otp" className="mb-2 block text-sm font-medium text-zinc-300">
                   Verification code
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound className="h-5 w-5 text-gray-400" />
+                    <KeyRound className="h-5 w-5 text-zinc-400" />
                   </div>
                   <input
                     id="otp"
@@ -141,7 +141,7 @@ export default function AdminLogin() {
                     maxLength={6}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-xl bg-gray-800/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest font-mono"
+                    className="block w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-3 text-center font-mono text-lg tracking-widest text-white placeholder-zinc-500 focus:border-cyan-400/35 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                     placeholder="000000"
                   />
                 </div>
@@ -155,14 +155,14 @@ export default function AdminLogin() {
                 <button
                   type="button"
                   onClick={handleBackToEmail}
-                  className="flex-1 py-3 px-4 rounded-xl text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-zinc-300 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-400/30"
                 >
                   Back
                 </button>
                 <button
                   type="submit"
                   disabled={loading || otp.length !== 6}
-                  className="flex-1 flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-cyan-400/35 bg-cyan-400/15 px-4 py-3 text-sm font-medium text-cyan-100 hover:bg-cyan-400/20 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                   {loading ? 'Signing in…' : 'Verify & Sign in'}
@@ -172,7 +172,7 @@ export default function AdminLogin() {
           )}
         </div>
 
-        <p className="text-center text-gray-500 text-sm">
+        <p className="text-center text-sm text-zinc-500">
           Secure access to AutoBot administration
         </p>
       </div>
