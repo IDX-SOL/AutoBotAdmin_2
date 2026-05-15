@@ -69,7 +69,13 @@ export interface Bot {
     platform?: string;
     device?: string;
     country?: string;
+    campaignId?: number | null;
+    campaignName?: string | null;
+    campaignSource?: string | null;
+    campaignMedium?: string | null;
   };
+  /** First-touch attribution label (source · medium · campaign). */
+  acquisitionSource?: string | null;
   // Optional fields that might not be returned by the backend
   lastTradeAt?: string;
   firstRechageDate?: boolean;
