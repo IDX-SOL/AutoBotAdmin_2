@@ -505,22 +505,27 @@ export default function AdminBots() {
               <Link href={`/admin/users/${bot.user?.id}`} className="text-xs text-blue-400 truncate block hover:text-blue-300 transition-colors">
                 <span className="hover:underline">{bot.user?.email || 'No description'}</span>
               </Link>
-              {(bot.acquisitionSource || bot.user?.campaignName || bot.user?.campaignSource) && (
-                <div
-                  className="flex items-center gap-1 mt-1 text-xs text-purple-300 px-1.5 py-0.5 bg-purple-500/10 rounded border border-purple-500/20 max-w-full"
-                  title={bot.acquisitionSource || undefined}
-                >
-                  <Award className="h-3 w-3 shrink-0 text-yellow-500" />
-                  <span className="truncate font-medium">
-                    {bot.acquisitionSource ||
-                      [bot.user?.campaignSource, bot.user?.campaignMedium, bot.user?.campaignName]
-                        .filter(Boolean)
-                        .join(' · ')}
-                  </span>
-                </div>
-              )}
-              {(bot.user?.platform || bot.user?.device || bot.user?.country) && (
+              {(bot.user?.platform ||
+                bot.user?.device ||
+                bot.user?.country ||
+                bot.acquisitionSource ||
+                bot.user?.campaignName ||
+                bot.user?.campaignSource) && (
                 <div className="flex items-center gap-1 flex-wrap mt-1">
+                  {(bot.acquisitionSource || bot.user?.campaignName || bot.user?.campaignSource) && (
+                    <span
+                      className="text-xs text-purple-300 flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/10 rounded border border-purple-500/20 max-w-full min-w-0"
+                      title={bot.acquisitionSource || undefined}
+                    >
+                      <Award className="h-3 w-3 shrink-0 text-yellow-500" />
+                      <span className="font-medium truncate">
+                        {bot.acquisitionSource ||
+                          [bot.user?.campaignSource, bot.user?.campaignMedium, bot.user?.campaignName]
+                            .filter(Boolean)
+                            .join(' · ')}
+                      </span>
+                    </span>
+                  )}
                   {bot.user?.platform && (
                     <span className="text-xs text-gray-400 flex items-center gap-1 px-1.5 py-0.5 bg-gray-700/40 rounded border border-gray-600/30">
                       {bot.user.platform === 'mobile' ? (
