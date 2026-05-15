@@ -830,6 +830,45 @@ export interface RechargeRecordItem {
   user?: { id: number; username: string; email: string } | null;
 }
 
+export interface SupportMessageItem {
+  id: number;
+  conversationId: number;
+  sessionId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  source?: string | null;
+  effectiveQuestion?: string | null;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface SupportConversationItem {
+  id: number;
+  sessionId: string;
+  userId?: number | null;
+  userEmail?: string | null;
+  username?: string | null;
+  currentPath?: string | null;
+  messageCount: number;
+  lastSource?: string | null;
+  lastMessageAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: { id: number; username?: string; email?: string } | null;
+}
+
+export interface SupportConversationDetail extends SupportConversationItem {
+  messages?: SupportMessageItem[];
+}
+
+export interface SupportConversationsListResponse {
+  success: boolean;
+  data: {
+    conversations: SupportConversationItem[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  };
+}
+
 export interface RechargeRecordsListResponse {
   success: boolean;
   data: {
@@ -1212,6 +1251,15 @@ const adminApiService = {
     params?: string | Record<string, string | number | boolean> | URLSearchParams
   ): Promise<AxiosResponse<RechargeRecordsListResponse>> =>
     adminAxiosInstance.get(`/admin/recharge-records/user/${userId}`, { params }),
+
+  getSupportConversations: (
+    params?: Record<string, string | number | boolean>
+  ): Promise<AxiosResponse<SupportConversationsListResponse>> =>
+    adminAxiosInstance.get('/admin/support-conversations', { params }),
+  getSupportConversation: (
+    id: number | string
+  ): Promise<AxiosResponse<{ success: boolean; data: SupportConversationDetail }>> =>
+    adminAxiosInstance.get(`/admin/support-conversations/${id}`),
 
   // Token revocation & kill switch
   getKillSwitchStatus: (): Promise<AxiosResponse<{ success: boolean; enabled: boolean }>> =>

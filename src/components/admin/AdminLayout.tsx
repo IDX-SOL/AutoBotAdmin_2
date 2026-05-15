@@ -30,6 +30,7 @@ import {
   Bell,
   ChevronDown,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
 import adminApiService, { AdminUser } from '@/utils/adminApiService';
 import seoTrackerService from '@/utils/seoTrackerService';
@@ -46,6 +47,10 @@ const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: BarChart3 },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Vouchers', href: '/admin/vouchers', icon: Ticket },
+  { name: 'AI Support', href: '/admin/ai-support', icon: MessageSquare },
+  { name: 'Bots', href: '/admin/bots', icon: Bot },
+  { name: 'Holder Bots', href: '/admin/holder-bots', icon: UsersRound },
+  { name: 'Reaction Bots', href: '/admin/reaction-bots', icon: Target },
   { name: 'Admins', href: '/admin/admins', icon: Shield },
   { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
   { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
