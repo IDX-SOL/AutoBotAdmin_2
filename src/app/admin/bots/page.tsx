@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import AdminLayout from "../../../components/admin/AdminLayout";
+import { BotRechargeHistoryPopup } from "../../../components/admin/BotRechargeHistoryPopup";
 import adminApiService, { Bot } from "../../../utils/adminApiService";
 import {
   Bot as BotIcon,
@@ -20,6 +21,7 @@ import {
   Square,
   Loader2,
   RefreshCw,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/Toast/ToastContext';
@@ -84,6 +86,11 @@ export default function AdminBots() {
   const [responseTitle, setResponseTitle] = useState('');
   const [stopAllConfirmOpen, setStopAllConfirmOpen] = useState(false);
   const [startAllConfirmOpen, setStartAllConfirmOpen] = useState(false);
+  const [rechargeHistoryOpen, setRechargeHistoryOpen] = useState(false);
+  const [rechargeHistoryBot, setRechargeHistoryBot] = useState<{
+    id: string;
+    botName?: string;
+  } | null>(null);
   const hasRestoredScrollRef = useRef(false);
   const { showSuccess, showError } = useToast();
 
@@ -394,6 +401,16 @@ export default function AdminBots() {
   //         return <BotIcon className="h-4 w-4" />;
   //     }
   // };
+
+  const openRechargeHistory = (bot: Bot) => {
+    setRechargeHistoryBot({ id: bot.id, botName: bot.botName });
+    setRechargeHistoryOpen(true);
+  };
+
+  const handleRechargeHistoryOpenChange = (open: boolean) => {
+    setRechargeHistoryOpen(open);
+    if (!open) setRechargeHistoryBot(null);
+  };
 
   const BotCardAdmin = ({ bot }: { bot: Bot }) => {
     const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -838,6 +855,16 @@ export default function AdminBots() {
               <Activity className="h-3 w-3" />
               <span>Logs</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={() => openRechargeHistory(bot)}
+              className="inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-3 sm:py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-all duration-200"
+              title="View recharge history"
+            >
+              <CreditCard className="h-3 w-3" />
+              <span>Recharge History</span>
+            </button>
           </div>
 
           {/* Additional Info */}
@@ -1246,6 +1273,15 @@ export default function AdminBots() {
               </div>
             </div>
           </div>
+        )}
+
+        {rechargeHistoryBot && (
+          <BotRechargeHistoryPopup
+            open={rechargeHistoryOpen}
+            onOpenChange={handleRechargeHistoryOpenChange}
+            botId={rechargeHistoryBot.id}
+            botName={rechargeHistoryBot.botName}
+          />
         )}
       </div>
     </AdminLayout>
