@@ -357,6 +357,37 @@ export interface ReactionBotHistoryResponse {
   };
 }
 
+export type ReactionBotActionType = 'rocket' | 'fire';
+export type ReactionBotAdminStatus = 'stopped' | 'running' | 'started';
+
+export interface StartReactionBotPayload {
+  reactionCount: number;
+  actionType: ReactionBotActionType;
+}
+
+export interface StartReactionBotResponse {
+  success?: boolean;
+  message?: string;
+  bot?: ReactionBot;
+}
+
+export interface PatchReactionBotStatusPayload {
+  status: ReactionBotAdminStatus;
+}
+
+export interface PatchReactionBotStatusResponse {
+  success?: boolean;
+  message?: string;
+  bot?: ReactionBot;
+}
+
+export interface SweepFundedReactionBotsResponse {
+  success?: boolean;
+  message?: string;
+  sweptCount?: number;
+  [key: string]: unknown;
+}
+
 export interface WalletBalance {
   id: number;
   walletAddress: string;
@@ -1186,6 +1217,18 @@ const adminApiService = {
     adminAxiosInstance.get('/admin/reaction-bots', { params }),
   getReactionBotHistory: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<ReactionBotHistoryResponse>> =>
     adminAxiosInstance.get('/admin/reaction-bots/history', { params }),
+  startReactionBot: (
+    botId: string,
+    payload: StartReactionBotPayload
+  ): Promise<AxiosResponse<StartReactionBotResponse>> =>
+    adminAxiosInstance.post(`/admin/reaction-bots/${botId}/start`, payload),
+  patchReactionBotStatus: (
+    botId: string,
+    payload: PatchReactionBotStatusPayload
+  ): Promise<AxiosResponse<PatchReactionBotStatusResponse>> =>
+    adminAxiosInstance.patch(`/admin/reaction-bots/${botId}/status`, payload),
+  sweepFundedReactionBotsToCompany: (): Promise<AxiosResponse<SweepFundedReactionBotsResponse>> =>
+    adminAxiosInstance.post('/admin/reaction-bots/sweep-funded-to-company'),
   // Wallet Balance Management
   getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> => 
     adminAxiosInstance.get('/wallet-balance/today'),
