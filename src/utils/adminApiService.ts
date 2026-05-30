@@ -143,6 +143,50 @@ export interface UsersResponse {
   };
 }
 
+export interface VoucherCampaignConfig {
+  success: boolean;
+  enabled: boolean;
+  campaignId: string;
+  code: string;
+  multiplier: number;
+  discountPercent: number;
+}
+
+export interface UserFirstRechargePromoSnapshot {
+  offerActive: boolean;
+  campaignId: string;
+  claimed: boolean;
+  consumed: boolean;
+  multiplier: number;
+}
+
+export interface UserVoucherStatusResponse {
+  success: boolean;
+  user: { id: number | string; email?: string; username?: string };
+  campaignId?: string | null;
+  consumedAt?: string | null;
+  hasRechargeFirstTime?: boolean;
+  activeCampaignId: string;
+  offerEnabled: boolean;
+  firstRechargePromo: UserFirstRechargePromoSnapshot;
+}
+
+export interface GrantUserVoucherPayload {
+  userId?: number | string;
+  email?: string;
+  resetConsumption?: boolean;
+  campaignId?: string;
+}
+
+export interface GrantUserVoucherResponse {
+  success: boolean;
+  message?: string;
+  user: { id: number | string; email?: string; username?: string };
+  campaignId: string;
+  consumedAt?: string | null;
+  firstRechargePromo: UserFirstRechargePromoSnapshot;
+}
+
 export interface BotsResponse {
   bots: Bot[];
   pagination: {
@@ -1172,6 +1216,24 @@ const adminApiService = {
     adminAxiosInstance.post('/admin/revoke-user-tokens', { userId }),
   revokeToken: (token: string): Promise<AxiosResponse<{ success: boolean; message?: string }>> =>
     adminAxiosInstance.post('/admin/revoke-token', { token }),
+
+  // First-recharge vouchers
+  getVoucherCampaignConfig: (): Promise<AxiosResponse<VoucherCampaignConfig>> =>
+    adminAxiosInstance.get('/admin/vouchers/config'),
+  getUserVoucherStatus: (userId: string | number): Promise<AxiosResponse<UserVoucherStatusResponse>> =>
+    adminAxiosInstance.get(`/admin/vouchers/user/${userId}`),
+  grantUserVoucher: (
+    payload: GrantUserVoucherPayload,
+  ): Promise<AxiosResponse<GrantUserVoucherResponse>> =>
+    adminAxiosInstance.post('/admin/vouchers/grant', payload),
+  grantUserVoucherById: (
+    userId: string | number,
+    payload?: Pick<GrantUserVoucherPayload, 'resetConsumption' | 'campaignId'>,
+  ): Promise<AxiosResponse<GrantUserVoucherResponse>> =>
+    adminAxiosInstance.post(`/admin/vouchers/user/${userId}/grant`, payload ?? {}),
+  rolloverFirstRechargeVoucher: (): Promise<
+    AxiosResponse<{ success: boolean; message?: string; updatedRows?: number; campaignId?: string }>
+  > => adminAxiosInstance.post('/admin/first-recharge-voucher/rollover', {}),
 
   // Email Automation
   getEmailStats: (): Promise<AxiosResponse<{ success: boolean; stats: EmailStats }>> => 

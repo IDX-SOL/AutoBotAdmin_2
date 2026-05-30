@@ -24,6 +24,7 @@ import {
   CreditCard,
   Plus,
   Layers,
+  Ticket,
   PanelLeftClose,
   PanelLeft,
   Bell,
@@ -44,6 +45,7 @@ type NavItem = {
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: BarChart3 },
   { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Vouchers', href: '/admin/vouchers', icon: Ticket },
   { name: 'Admins', href: '/admin/admins', icon: Shield },
   { name: 'Campaigns', href: '/admin/campaigns', icon: TrendingUp },
   { name: 'Tokens', href: '/admin/tokens', icon: BitcoinIcon },
