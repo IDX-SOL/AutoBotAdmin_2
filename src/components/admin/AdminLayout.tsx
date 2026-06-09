@@ -172,7 +172,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       isActive
                         ? 'bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-400/35'
                         : 'text-zinc-300 hover:bg-white/5 hover:text-white'
-                    }`}
+                    }`} 
                   >
                     <span className="flex items-center min-w-0">
                       <dashboardNavItem.icon className="mr-3 h-5 w-5 shrink-0" />
