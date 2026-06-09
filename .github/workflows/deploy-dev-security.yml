@@ -1,0 +1,235 @@
+name: Deploy Admin Panel (dev-security)
+
+on:
+  push:
+    branches:
+      - dev-security
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-deploy-dev-security
+  cancel-in-progress: true
+
+env:
+  DEPLOY_BRANCH: dev-security
+  PM2_APP_NAME: dev-admin
+  APP_DIR: /home/ubuntu/AutoBotAdmin
+  EC2_INSTANCE_ID: i-00b2bd74637d5ac46
+
+jobs:
+  build-test:
+    name: Build Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Run build test
+        run: npm run build
+
+  deploy:
+    name: Deploy via SSM
+    runs-on: ubuntu-latest
+    needs: build-test
+    timeout-minutes: 30
+
+    steps:
+      - name: Validate deployment context
+        run: |
+          set -euo pipefail
+          : "${EC2_INSTANCE_ID:?EC2_INSTANCE_ID is required}"
+          : "${PM2_APP_NAME:?PM2_APP_NAME is required}"
+          : "${APP_DIR:?APP_DIR is required}"
+          echo "Deploying branch '$DEPLOY_BRANCH' to instance '$EC2_INSTANCE_ID'"
+          echo "PM2 app '$PM2_APP_NAME' at '$APP_DIR'"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Verify SSM can reach admin instance
+        run: |
+          set -euo pipefail
+          echo "AWS region: ${AWS_REGION:-unset}"
+          echo "Target instance: $EC2_INSTANCE_ID"
+
+          SSM_INFO=$(aws ssm describe-instance-information \
+            --filters "Key=InstanceIds,Values=$EC2_INSTANCE_ID" \
+            --output json 2>&1) || {
+            echo "ERROR: aws ssm describe-instance-information failed:"
+            echo "$SSM_INFO"
+            echo ""
+            echo "Check GitHub secrets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION"
+            exit 1
+          }
+
+          COUNT=$(echo "$SSM_INFO" | jq -r '.InstanceInformationList | length')
+          if [ "$COUNT" -lt 1 ]; then
+            echo "ERROR: Instance $EC2_INSTANCE_ID is not registered with SSM in region ${AWS_REGION}."
+            echo ""
+            echo "On the EC2 host, confirm:"
+            echo "  1. SSM Agent is running"
+            echo "  2. Instance IAM role includes AmazonSSMManagedInstanceCore"
+            echo "  3. Instance ID and AWS_REGION in this workflow match the running server"
+            echo ""
+            echo "Managed instances in this region (first 10):"
+            aws ssm describe-instance-information --max-results 10 \
+              --query "InstanceInformationList[].{Id:InstanceId,Name:ComputerName,Ping:LastPingDateTime}" \
+              --output table || true
+            exit 1
+          fi
+
+          echo "SSM agent is online for $EC2_INSTANCE_ID"
+
+      - name: Deploy admin panel via SSM
+        id: deploy
+        run: |
+          set -euo pipefail
+          COMMANDS=$(jq -cn \
+            --arg branch "$DEPLOY_BRANCH" \
+            --arg pm2_name "$PM2_APP_NAME" \
+            --arg app_dir "$APP_DIR" \
+            '[
+              "#!/bin/bash",
+              "set -euo pipefail",
+              "sudo -u ubuntu bash << \"USEREOF\"",
+              "set -euo pipefail",
+              "export HOME=/home/ubuntu",
+              "export NVM_DIR=\"$HOME/.nvm\"",
+              "if [ -s \"$NVM_DIR/nvm.sh\" ]; then . \"$NVM_DIR/nvm.sh\"; fi",
+              "if command -v nvm >/dev/null 2>&1; then nvm use --silent default >/dev/null 2>&1 || true; fi",
+              "command -v node >/dev/null 2>&1 || { echo \"ERROR: node is not available for ubuntu user\"; exit 1; }",
+              "command -v npm >/dev/null 2>&1 || { echo \"ERROR: npm is not available for ubuntu user\"; exit 1; }",
+              "node -v",
+              "npm -v",
+              "command -v pm2 >/dev/null 2>&1 || npm install -g pm2",
+              "pm2 -v",
+              "APP_DIR=\($app_dir)",
+              "[ -d \"$APP_DIR\" ] || { echo \"ERROR: project directory not found: $APP_DIR\"; exit 1; }",
+              "cd \"$APP_DIR\"",
+              "git config --global --add safe.directory \"$APP_DIR\" || true",
+              "git rev-parse --is-inside-work-tree >/dev/null || { echo \"ERROR: not a git repository: $APP_DIR\"; exit 1; }",
+              "git ls-remote --exit-code --heads origin \($branch) >/dev/null || { echo \"ERROR: branch does not exist or remote access failed: \($branch)\"; exit 1; }",
+              "CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)",
+              "if [ \"$CURRENT_BRANCH\" = \"\($branch)\" ]; then echo \"Already on branch \($branch)\"; else echo \"Switching from $CURRENT_BRANCH to \($branch)\"; git fetch --prune origin \($branch); git checkout \($branch) || git checkout -b \($branch) origin/\($branch); fi",
+              "git pull origin \($branch)",
+              "if [ -f package-lock.json ]; then npm ci --no-audit; else npm install --no-audit; fi",
+              "NODE_ENV=production npm run build",
+              "pm2 restart \($pm2_name) --update-env || { echo \"ERROR: pm2 process \($pm2_name) restart failed\"; pm2 list; exit 1; }",
+              "pm2 save --force",
+              "echo \"Deploy done $(date)\"",
+              "USEREOF"
+            ]')
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --timeout-seconds 1800 \
+            --comment "Deploy Admin Panel (${DEPLOY_BRANCH})" \
+            --parameters "commands=$COMMANDS" \
+            --query "Command.CommandId" \
+            --output text 2>&1) || {
+            echo "ERROR: aws ssm send-command failed:"
+            echo "$COMMAND_ID"
+            exit 1
+          }
+
+          echo "COMMAND_ID=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+          echo "Command ID: $COMMAND_ID"
+
+      - name: Wait for command completion
+        id: wait
+        run: |
+          set -euo pipefail
+          STATUS="Pending"
+          for _ in $(seq 1 180); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "${{ steps.deploy.outputs.COMMAND_ID }}" \
+              --instance-id "$EC2_INSTANCE_ID" \
+              --query "Status" \
+              --output text 2>/dev/null || echo "Pending")
+            echo "Current status: $STATUS"
+            case "$STATUS" in
+              Success|Failed|Cancelled|Cancelling|TimedOut)
+                break
+                ;;
+            esac
+            sleep 10
+          done
+
+          case "$STATUS" in
+            Success|Failed|Cancelled|Cancelling|TimedOut) ;;
+            *) STATUS="TimedOut" ;;
+          esac
+
+          echo "STATUS=$STATUS" >> "$GITHUB_OUTPUT"
+
+      - name: Show deployment logs
+        if: always()
+        run: |
+          set -euo pipefail
+          echo "========================================="
+          echo "DEPLOYMENT LOGS"
+          echo "========================================="
+
+          INVOCATION_JSON=$(aws ssm get-command-invocation \
+            --command-id "${{ steps.deploy.outputs.COMMAND_ID }}" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --output json 2>/dev/null || true)
+
+          if [ -z "$INVOCATION_JSON" ]; then
+            STATUS="${{ steps.wait.outputs.STATUS }}"
+            STATUS_DETAILS="Unavailable"
+            RESPONSE_CODE="Unavailable"
+            STDOUT_CONTENT=""
+            STDERR_CONTENT=""
+          else
+            STATUS=$(echo "$INVOCATION_JSON" | jq -r '.Status // "Unknown"')
+            STATUS_DETAILS=$(echo "$INVOCATION_JSON" | jq -r '.StatusDetails // "Unknown"')
+            RESPONSE_CODE=$(echo "$INVOCATION_JSON" | jq -r '.ResponseCode // "Unknown"')
+            STDOUT_CONTENT=$(echo "$INVOCATION_JSON" | jq -r '.StandardOutputContent // ""')
+            STDERR_CONTENT=$(echo "$INVOCATION_JSON" | jq -r '.StandardErrorContent // ""')
+          fi
+
+          echo "Status: $STATUS"
+          echo "StatusDetails: $STATUS_DETAILS"
+          echo "ResponseCode: $RESPONSE_CODE"
+          echo ""
+
+          echo "--- Standard Output ---"
+          if [ -n "$STDOUT_CONTENT" ]; then
+            echo "$STDOUT_CONTENT"
+          else
+            echo "(no output)"
+          fi
+
+          echo ""
+          echo "--- Standard Error ---"
+          if [ -n "$STDERR_CONTENT" ]; then
+            echo "$STDERR_CONTENT"
+          else
+            echo "(no errors)"
+          fi
+
+          echo "========================================="
+
+          if [ "$STATUS" != "Success" ]; then
+            exit 1
+          fi
