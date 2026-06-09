@@ -57,6 +57,30 @@ jobs:
           echo "Deploying branch '$DEPLOY_BRANCH' to instance '$EC2_INSTANCE_ID'"
           echo "PM2 app '$PM2_APP_NAME' at '$APP_DIR'"
 
+      - name: Check required AWS secrets
+        run: |
+          set -euo pipefail
+          missing=0
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            echo "MISSING: AWS_ACCESS_KEY_ID"
+            missing=1
+          fi
+          if [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "MISSING: AWS_SECRET_ACCESS_KEY"
+            missing=1
+          fi
+          if [ -z "${{ secrets.AWS_REGION }}" ]; then
+            echo "MISSING: AWS_REGION (use ap-south-1 if unsure)"
+            missing=1
+          fi
+          if [ "$missing" -eq 1 ]; then
+            echo ""
+            echo "This repo needs the same Actions secrets as IdxAutoBotNext:"
+            echo "  GitHub → Settings → Secrets and variables → Actions → New repository secret"
+            echo "  AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION"
+            exit 1
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -182,7 +206,7 @@ jobs:
           echo "STATUS=$STATUS" >> "$GITHUB_OUTPUT"
 
       - name: Show deployment logs
-        if: always()
+        if: always() && steps.deploy.outputs.COMMAND_ID != ''
         run: |
           set -euo pipefail
           echo "========================================="
