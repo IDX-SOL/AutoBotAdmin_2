@@ -51,9 +51,16 @@ export default function BotTradeWalletsPage() {
   const [copiedAddresses, setCopiedAddresses] = useState(new Set());
   const [walletSource, setWalletSource] = useState(null);
   const [filterTokenMint, setFilterTokenMint] = useState(null);
+  const [filterBotId, setFilterBotId] = useState(null);
 
   const isWorkerGridWalletSource =
     walletSource === 'mini-workers-pool' || walletSource === 'v12-turbo-workers';
+
+  const isV4EcoDbPoolSource =
+    walletSource === 'v4-eco-wallet-pool-db' || walletSource === 'v4-eco-trade-pool';
+
+  const isPoolGridWalletSource =
+    walletSource === 'trade-wallets-pool' || isV4EcoDbPoolSource;
 
   /** Re-fetch worker rows so reserved / retired match the pool after a balance check. */
   const refreshTradeWalletsFromApi = async () => {
@@ -64,6 +71,7 @@ export default function BotTradeWalletsPage() {
       setTradeWallets(payload.botTeradeWalletsData || []);
       setWalletSource(payload.walletSource || null);
       setFilterTokenMint(payload.filterTokenMint || null);
+      setFilterBotId(payload.filterBotId || botId || null);
       setBotRecordMissing(Boolean(payload.botRecordMissing));
     } catch (e) {
       console.error('Failed to refresh trade wallets list:', e);
@@ -92,6 +100,7 @@ export default function BotTradeWalletsPage() {
         setTradeWallets(payload.botTeradeWalletsData || []);
         setWalletSource(payload.walletSource || null);
         setFilterTokenMint(payload.filterTokenMint || null);
+      setFilterBotId(payload.filterBotId || botId || null);
         
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -703,7 +712,9 @@ export default function BotTradeWalletsPage() {
         {/* Trade Wallets */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-white mb-2">
-            {walletSource === 'trade-wallets-pool'
+            {isV4EcoDbPoolSource
+              ? `V4 Eco trade wallets — DB (${tradeWallets.length})`
+              : walletSource === 'trade-wallets-pool'
               ? `V8 pool wallets (${tradeWallets.length})`
               : walletSource === 'mini-workers-pool'
                 ? `Mini workers (${tradeWallets.length})`
@@ -727,6 +738,21 @@ export default function BotTradeWalletsPage() {
               <span className="text-gray-400/90">Retired</span> = rotated out of the pool (no longer reserved for this bot).
             </p>
           )}
+          {isV4EcoDbPoolSource && (
+            <p className="text-sm text-gray-400 mb-4">
+              V4 Eco workers from <span className="font-mono text-gray-300">wallet_pool</span> +{' '}
+              <span className="font-mono text-gray-300">wallet_pool_events</span> (DB only), filtered by bot id{' '}
+              <span className="text-white font-mono">{filterBotId || botId}</span>.{' '}
+              <span className="text-emerald-400/90">Reserved</span> = <span className="font-mono text-gray-400">reserved_by_bot_id</span>;{' '}
+              <span className="text-amber-300/90">History</span> = prior <span className="font-mono text-gray-400">wallet_pool_events</span> for this bot. Private keys are never returned.
+            </p>
+          )}
+          {(isV4EcoDbPoolSource || walletSource === 'trade-wallets-pool') && filterBotId && (
+            <div className="mb-4 p-3 rounded-lg bg-gray-800/80 border border-gray-600/50">
+              <p className="text-xs text-gray-400 mb-1">Filter bot id</p>
+              <p className="text-sm text-cyan-200/90 font-mono">{filterBotId}</p>
+            </div>
+          )}
           {walletSource === 'trade-wallets-pool' && filterTokenMint && (
             <p className="text-sm text-gray-400 mb-4">
               Rows from <span className="text-gray-300 font-mono">trade-wallets-pool.json</span> where{' '}
@@ -734,7 +760,7 @@ export default function BotTradeWalletsPage() {
               <span className="font-mono text-gray-300">docs/trade-wallets-pool.json</span>). Private keys are not returned.
             </p>
           )}
-          {walletSource === 'trade-wallets-pool' && filterTokenMint && (
+          {(walletSource === 'trade-wallets-pool' || walletSource === 'v4-eco-trade-pool') && filterTokenMint && (
             <div className="mb-4 p-3 rounded-lg bg-gray-800/80 border border-gray-600/50">
               <p className="text-xs text-gray-400 mb-1">Bot token mint (filter)</p>
               <div className="flex items-start gap-2">
@@ -759,7 +785,9 @@ export default function BotTradeWalletsPage() {
             <div className="text-center py-12">
               <Wallet className="h-16 w-16 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">
-                {walletSource === 'trade-wallets-pool'
+                {isV4EcoDbPoolSource
+                  ? `No V4 Eco trade wallets in wallet_pool DB for bot id ${filterBotId || botId} yet`
+                  : walletSource === 'trade-wallets-pool'
                   ? 'No pool wallets have lastUsedByToken entries for this bot mint'
                   : walletSource === 'mini-workers-pool'
                     ? botRecordMissing
@@ -770,7 +798,7 @@ export default function BotTradeWalletsPage() {
                       : 'No trade wallets found for this bot'}
               </p>
             </div>
-          ) : walletSource === 'trade-wallets-pool' ? (
+          ) : isPoolGridWalletSource ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {tradeWallets.map((wallet, index) => {
                 const orderedKeys = Object.keys(wallet).filter((k) => k !== 'privateKey').sort();
@@ -779,19 +807,46 @@ export default function BotTradeWalletsPage() {
                     key={wallet.publicKey || index}
                     className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-4 gap-2">
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(wallet.status)}
                         <span className={`text-sm font-medium capitalize ${getStatusColor(wallet.status)}`}>
                           {wallet.status || 'unknown'}
                         </span>
                       </div>
+                      {wallet.poolRole && (
+                        <span
+                          className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
+                            wallet.poolRole === 'reserved'
+                              ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50'
+                              : 'bg-amber-900/30 text-amber-200/90 border border-amber-700/40'
+                          }`}
+                        >
+                          {wallet.poolRole}
+                        </span>
+                      )}
                     </div>
-                    {(wallet.lastUsedAtForBotToken != null || wallet.lastUsedIndexForBotToken != null) && (
+                    {(wallet.lastUsedAtForBot != null ||
+                      wallet.lastUsedAtForBotToken != null ||
+                      wallet.lastUsedIndexForBotToken != null ||
+                      wallet.reservedByBotId != null) && (
                       <div className="mb-4 p-3 rounded-lg bg-amber-900/20 border border-amber-700/40 space-y-1">
-                        <p className="text-xs text-amber-200/80 font-medium">Last use for this bot mint</p>
+                        {wallet.reservedByBotId != null && (
+                          <p className="text-xs text-gray-400">
+                            reservedBy: <span className="font-mono text-white">{wallet.reservedByBotId}</span>
+                          </p>
+                        )}
+                        {wallet.lastUsedAtForBot != null && (
+                          <>
+                            <p className="text-xs text-amber-200/80 font-medium">Last use for this bot id</p>
+                            <p className="text-sm text-white">{formatDateTime(wallet.lastUsedAtForBot)}</p>
+                          </>
+                        )}
                         {wallet.lastUsedAtForBotToken != null && (
-                          <p className="text-sm text-white">{formatDateTime(wallet.lastUsedAtForBotToken)}</p>
+                          <>
+                            <p className="text-xs text-amber-200/80 font-medium">Last use for bot token mint</p>
+                            <p className="text-sm text-white">{formatDateTime(wallet.lastUsedAtForBotToken)}</p>
+                          </>
                         )}
                         {wallet.lastUsedIndexForBotToken != null && (
                           <p className="text-xs text-gray-400">
@@ -826,8 +881,12 @@ export default function BotTradeWalletsPage() {
                           [
                             'publicKey',
                             'status',
+                            'lastUsedAtForBot',
                             'lastUsedAtForBotToken',
-                            'lastUsedIndexForBotToken'
+                            'lastUsedIndexForBotToken',
+                            'poolRole',
+                            'filterBotId',
+                            'reservedByBotId'
                           ].includes(key)
                         ) {
                           return null;
