@@ -163,7 +163,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               })}
             </nav>
           </div>
-        </div>
+        </div> 
 
         {/* Main content */}
         <div
