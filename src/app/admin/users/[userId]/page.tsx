@@ -306,7 +306,7 @@ export default function UserDetailPage() {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Bot Limit:</span>
-                        <span className="text-white">{user.userBotsLimit || 3}</span>
+                        <span className="text-white">{user.userBotsLimit ?? 16}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Onboarding:</span>
@@ -524,7 +524,7 @@ export default function UserDetailPage() {
                       <div className="p-4 bg-gray-600/30 rounded-lg">
                         <h4 className="text-sm font-medium text-white mb-2">Bot Limits</h4>
                         <p className="text-xs text-gray-400">Maximum number of bots this user can create</p>
-                        <p className="text-lg font-semibold text-white mt-1">{user.userBotsLimit || 3} bots</p>
+                        <p className="text-lg font-semibold text-white mt-1">{user.userBotsLimit ?? 16} bots</p>
                       </div>
                       
                       <div className="p-4 bg-gray-600/30 rounded-lg">

@@ -149,6 +149,50 @@ export interface UsersResponse {
   };
 }
 
+export interface VoucherCampaignConfig {
+  success: boolean;
+  enabled: boolean;
+  campaignId: string;
+  code: string;
+  multiplier: number;
+  discountPercent: number;
+}
+
+export interface UserFirstRechargePromoSnapshot {
+  offerActive: boolean;
+  campaignId: string;
+  claimed: boolean;
+  consumed: boolean;
+  multiplier: number;
+}
+
+export interface UserVoucherStatusResponse {
+  success: boolean;
+  user: { id: number | string; email?: string; username?: string };
+  campaignId?: string | null;
+  consumedAt?: string | null;
+  hasRechargeFirstTime?: boolean;
+  activeCampaignId: string;
+  offerEnabled: boolean;
+  firstRechargePromo: UserFirstRechargePromoSnapshot;
+}
+
+export interface GrantUserVoucherPayload {
+  userId?: number | string;
+  email?: string;
+  resetConsumption?: boolean;
+  campaignId?: string;
+}
+
+export interface GrantUserVoucherResponse {
+  success: boolean;
+  message?: string;
+  user: { id: number | string; email?: string; username?: string };
+  campaignId: string;
+  consumedAt?: string | null;
+  firstRechargePromo: UserFirstRechargePromoSnapshot;
+}
+
 export interface BotsResponse {
   bots: Bot[];
   pagination: {
@@ -361,6 +405,37 @@ export interface ReactionBotHistoryResponse {
     total: number;
     totalPages: number;
   };
+}
+
+export type ReactionBotActionType = 'rocket' | 'fire';
+export type ReactionBotAdminStatus = 'stopped' | 'running' | 'started';
+
+export interface StartReactionBotPayload {
+  reactionCount: number;
+  actionType: ReactionBotActionType;
+}
+
+export interface StartReactionBotResponse {
+  success?: boolean;
+  message?: string;
+  bot?: ReactionBot;
+}
+
+export interface PatchReactionBotStatusPayload {
+  status: ReactionBotAdminStatus;
+}
+
+export interface PatchReactionBotStatusResponse {
+  success?: boolean;
+  message?: string;
+  bot?: ReactionBot;
+}
+
+export interface SweepFundedReactionBotsResponse {
+  success?: boolean;
+  message?: string;
+  sweptCount?: number;
+  [key: string]: unknown;
 }
 
 export interface WalletBalance {
@@ -1196,6 +1271,24 @@ const adminApiService = {
   revokeToken: (token: string): Promise<AxiosResponse<{ success: boolean; message?: string }>> =>
     adminAxiosInstance.post('/admin/revoke-token', { token }),
 
+  // First-recharge vouchers
+  getVoucherCampaignConfig: (): Promise<AxiosResponse<VoucherCampaignConfig>> =>
+    adminAxiosInstance.get('/admin/vouchers/config'),
+  getUserVoucherStatus: (userId: string | number): Promise<AxiosResponse<UserVoucherStatusResponse>> =>
+    adminAxiosInstance.get(`/admin/vouchers/user/${userId}`),
+  grantUserVoucher: (
+    payload: GrantUserVoucherPayload,
+  ): Promise<AxiosResponse<GrantUserVoucherResponse>> =>
+    adminAxiosInstance.post('/admin/vouchers/grant', payload),
+  grantUserVoucherById: (
+    userId: string | number,
+    payload?: Pick<GrantUserVoucherPayload, 'resetConsumption' | 'campaignId'>,
+  ): Promise<AxiosResponse<GrantUserVoucherResponse>> =>
+    adminAxiosInstance.post(`/admin/vouchers/user/${userId}/grant`, payload ?? {}),
+  rolloverFirstRechargeVoucher: (): Promise<
+    AxiosResponse<{ success: boolean; message?: string; updatedRows?: number; campaignId?: string }>
+  > => adminAxiosInstance.post('/admin/first-recharge-voucher/rollover', {}),
+
   // Email Automation
   getEmailStats: (): Promise<AxiosResponse<{ success: boolean; stats: EmailStats }>> => 
     adminAxiosInstance.get('/admin/emails/stats'),
@@ -1240,6 +1333,18 @@ const adminApiService = {
     adminAxiosInstance.get('/admin/reaction-bots', { params }),
   getReactionBotHistory: (params?: string | Record<string, string | number | boolean> | URLSearchParams): Promise<AxiosResponse<ReactionBotHistoryResponse>> =>
     adminAxiosInstance.get('/admin/reaction-bots/history', { params }),
+  startReactionBot: (
+    botId: string,
+    payload: StartReactionBotPayload
+  ): Promise<AxiosResponse<StartReactionBotResponse>> =>
+    adminAxiosInstance.post(`/admin/reaction-bots/${botId}/start`, payload),
+  patchReactionBotStatus: (
+    botId: string,
+    payload: PatchReactionBotStatusPayload
+  ): Promise<AxiosResponse<PatchReactionBotStatusResponse>> =>
+    adminAxiosInstance.patch(`/admin/reaction-bots/${botId}/status`, payload),
+  sweepFundedReactionBotsToCompany: (): Promise<AxiosResponse<SweepFundedReactionBotsResponse>> =>
+    adminAxiosInstance.post('/admin/reaction-bots/sweep-funded-to-company'),
   // Wallet Balance Management
   getWalletBalancesToday: (): Promise<AxiosResponse<WalletBalanceResponse>> => 
     adminAxiosInstance.get('/wallet-balance/today'),
