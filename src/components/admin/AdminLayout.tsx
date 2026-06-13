@@ -59,7 +59,7 @@ const navigation = [
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-}
+} 
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
