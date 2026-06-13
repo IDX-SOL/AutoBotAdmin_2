@@ -4,21 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Wallet, AlertCircle, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/admin/AdminLayout';
-import adminApiService from '@/utils/adminApiService';
-
-type TrialWalletStatus = {
-  ownerWallet: {
-    address: string | null;
-    configured: boolean;
-    solBalance: number;
-    lowBalance: boolean;
-  };
-  tradeWallets: Array<{ address: string; solBalance: number }>;
-  totalSol: number;
-  thresholds: { ownerLowSol: number; systemMinSol: number };
-  needsFunding: boolean;
-  fundingInstructions: string;
-};
+import adminApiService, { type TrialWalletStatus } from '@/utils/adminApiService';
 
 export default function TrialFundingPage() {
   const [status, setStatus] = useState<TrialWalletStatus | null>(null);

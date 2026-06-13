@@ -500,6 +500,20 @@ export interface CronStatus {
   schedule: string;
 }
 
+export interface TrialWalletStatus {
+  ownerWallet: {
+    address: string | null;
+    configured: boolean;
+    solBalance: number;
+    lowBalance: boolean;
+  };
+  tradeWallets: Array<{ address: string; solBalance: number }>;
+  totalSol: number;
+  thresholds: { ownerLowSol: number; systemMinSol: number };
+  needsFunding: boolean;
+  fundingInstructions: string;
+}
+
 // Email-related interfaces
 export interface EmailStats {
   totalSent: number;
@@ -1360,7 +1374,7 @@ const adminApiService = {
     adminAxiosInstance.post('/wallet-balance/check-now'),
   getWalletBalanceCronStatus: (): Promise<AxiosResponse<CronStatus>> => 
     adminAxiosInstance.get('/wallet-balance/cron-status'),
-  getTrialWalletStatus: (): Promise<AxiosResponse<{ success: boolean; data: unknown }>> =>
+  getTrialWalletStatus: (): Promise<AxiosResponse<{ success: boolean; data: TrialWalletStatus }>> =>
     adminAxiosInstance.get('/admin/trial-wallet/status'),
   
   // New wallet balance features
