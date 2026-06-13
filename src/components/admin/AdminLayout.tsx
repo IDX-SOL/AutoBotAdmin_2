@@ -57,6 +57,7 @@ const navigation: NavItem[] = [
   { name: 'Bot Recharge Records', href: '/admin/recharge-records', icon: CreditCard },
   { name: 'Security', href: '/admin/security', icon: ShieldAlert },
   { name: 'Wallet Balances', href: '/admin/wallet-balances', icon: Wallet },
+  { name: 'Trial Funding', href: '/admin/trial-funding', icon: Wallet },
   { name: 'Emails', href: '/admin/emails', icon: Mail },
   { name: 'Email templates', href: '/admin/email-templates', icon: FileEdit },
   // { name: 'Email Monitoring', href: '/admin/email-monitoring', icon: Mail },
