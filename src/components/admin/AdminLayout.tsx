@@ -56,7 +56,7 @@ const navigation = [
   // { name: 'Analytics', href: '#', icon: TrendingUpDownIcon },
   // { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
-
+ 
 interface AdminLayoutProps {
   children: React.ReactNode;
 } 
