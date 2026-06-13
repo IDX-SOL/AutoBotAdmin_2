@@ -1255,6 +1255,8 @@ const adminApiService = {
     adminAxiosInstance.post('/wallet-balance/check-now'),
   getWalletBalanceCronStatus: (): Promise<AxiosResponse<CronStatus>> => 
     adminAxiosInstance.get('/wallet-balance/cron-status'),
+  getTrialWalletStatus: (): Promise<AxiosResponse<{ success: boolean; data: unknown }>> =>
+    adminAxiosInstance.get('/admin/trial-wallet/status'),
   
   // New wallet balance features
   checkBotWallets: (botId: number, checkDate?: string, includeTradeWallets?: boolean, timeWindowHours?: number): Promise<AxiosResponse<unknown>> => 
